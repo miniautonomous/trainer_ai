@@ -9,7 +9,7 @@ class ConfigurationProcessor:
 
     Input configuration files have three sections:
         1) Training: specifications of the training session (e.g. epochs, val/train ratio, etc.)
-        2) Network: Model definition and associated parameters
+        2) Network: model definition and associated parameters
         3) Data: specifications and characteristics involving the training data
 
     """
