@@ -38,6 +38,9 @@ class ConfigurationProcessor:
         # Process the desired configuration
         self._process_configuration()
 
+        # Check the desired config for conflicts and inform if found
+        self._clean_configuration()
+
     def _process_configuration(self):
         for section in self.parser.sections():
 
@@ -79,3 +82,15 @@ class ConfigurationProcessor:
                     else:
                         self.data_dictionary[option] = \
                             self.parser.get(section, option)
+
+    def _clean_configuration(self):
+        if self.training_dictionary['batch_size'] is None:
+            self.training_dictionary['batch_size'] = 1
+            print('Batch size not defined, being set to default value of 1.')
+        if self.data_dictionary['train_to_valid'] is None or \
+                self.data_dictionary['train_to_valid'] >= 1.0:
+            self.data_dictionary['train_to_valid'] = 0.85
+            print('Train to validation ratio being reset to default value of 0.85.')
+        if self.data_dictionary['sequence'] is False:
+            self.data_dictionary['sequence_length'] = 0
+            print('Non-sequence training requested, so sequence length is set to 0.')

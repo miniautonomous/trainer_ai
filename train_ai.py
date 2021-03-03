@@ -6,6 +6,7 @@ import os
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
+from utils import process_configuration
 
 
 # GPU identifier
@@ -18,14 +19,18 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 
 class TrainAI(object):
-    def __init__(self, input_confg: string = None):
+    def __init__(self, input_config: string = None):
         """
         Trains the models to be deployed to MiniAutonomous!
 
         Parameters
         ----------
-        input_confg: (string) configuration file that defines the training process
+        input_config: (string) configuration file that defines the training process
+
         """
+        self.training_configuration = process_configuration.ConfigurationProcessor(input_config)
+
+
 
     def train_model(self):
         print("Need to be code this.")
@@ -35,4 +40,4 @@ if __name__ == '__main__':
     train_ai = TrainAI(sys.argv[1])
 
     # Train the model
-    train_ai.train_model()
+    # train_ai.train_model()
