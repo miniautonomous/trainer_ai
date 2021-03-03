@@ -44,7 +44,7 @@ class BatchLoader:
         else:
             self.training_labels = np.zeros((0,), self.d_type)
 
-        # Set the training files
+        # Create a list of all the HDF5 in the data directory
         self._files = glob.glob(self._data_config['data_directory'])
 
         # Zero out important indices
@@ -63,7 +63,7 @@ class BatchLoader:
 
         Returns
         -------
-        temp_image, temp_label: (np.ndarray, np.ndarray) image and corresponding label for
+        temp_image, temp_label: ([np.ndarray, np.ndarray]) image and corresponding label for
                                 training
 
         """
@@ -93,6 +93,7 @@ class BatchLoader:
                 group_dataset.append(item[0])
 
             # Create an image array
+            # TODO: Verify the data type!
             temp_image = np.zeros((len(group_list), int(file_attributes['imageHeight']),
                                    int(file_attributes['imageWidth']), 3), np.uint8)
 
@@ -121,3 +122,35 @@ class BatchLoader:
 
         return temp_image, temp_label
 
+    def load_from_hdf5(self) -> [np.ndarray, np.ndarray]:
+        """
+            Read individual data frames from all the HDF5 files
+            found in a directory.
+
+        Returns
+        -------
+        training_dataset: ([np.ndarray, np.ndarray]) training and validation data
+        """
+        for count, file in enumerate(self._files):
+            print('Reading file {}: {}/{}'.format(file, count+1, len(self._files)))
+
+            # Read the data from the file
+            temp_image, temp_label = self.read_data_file(file)
+
+            # Finished current file so collate with general data
+            self.training_images = np.concatenate((self.training_images, temp_image), axis=0)
+            self.training_labels = np.concatenate((self.training_labels, temp_label), axis=0)
+
+        # Done reading files; shuffle if required
+        if self._data_config['shuffle']:
+            self.training_images, self.training_labels = shuffle(self.training_images,
+                                                                 self.training_labels)
+
+        # Do the training and validation split
+        total_number_frames = len(self.training_labels)
+        samples_for_training = int(self._data_config['train_to_valid']*total_number_frames)
+        training_data = (self.training_images[0:samples_for_training],
+                         self.training_labels[0:samples_for_training])
+        validation_data = (self.training_images[samples_for_training:],
+                           self.training_labels[samples_for_training:])
+        return [training_data, validation_data]
