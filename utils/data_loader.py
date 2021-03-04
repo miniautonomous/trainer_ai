@@ -129,7 +129,7 @@ class BatchLoader:
 
         Returns
         -------
-        training_dataset: ([np.ndarray, np.ndarray]) training and validation data
+        training dataset: ([np.ndarray, np.ndarray]) training and validation data
         """
         for count, file in enumerate(self._files):
             print('Reading file {}: {}/{}'.format(file, count+1, len(self._files)))
@@ -154,3 +154,83 @@ class BatchLoader:
         validation_data = (self.training_images[samples_for_training:],
                            self.training_labels[samples_for_training:])
         return [training_data, validation_data]
+
+    def load_sequence_from_hdf5(self) -> [np.ndarray, np.ndarray]:
+        """
+            Load a sequence of frames from HDF5.
+
+        Returns
+        -------
+        training dataset: ([np.ndarray, np.ndarray]) training and validation data
+        """
+        for count, file in enumerate(self._files):
+            print('Reading file {}: {}/{}'.format(file, count + 1, len(self._files)))
+
+            # Read the data from the file
+            temp_image, temp_label = self.read_data_file(file)
+
+            # Determine the number of frames in the given file
+            number_of_frames = len(temp_image)
+
+            # Create a valid index list for sequences
+            valid_starting_indices = list(range(number_of_frames -
+                                                self._data_config['sequence_length']))
+
+            """
+                Since we are allowing sequences to have overlaps, we need to make an adjustment
+                to how the file data frames are indexed. Let's say we are considering the following
+                two sequences of five data frames, where the number are the data frame index:
+                
+                Sequence A: [30 31 32 33 34]
+                Sequence B: [35 36 37 38 39]
+                
+                In the above, we are not allowing for an overlap, which would not only waste valid
+                sequences but also produce a training set correlated to a single timeline across the 
+                data file. It would be better to allow for individual frame reuse, as in:
+                
+                Sequence A: [30 31 32 33 34]
+                Sequence B: [32 33 34 35 36]
+                
+                Now we have reused three frames, (32, 33 and 34). We add the parameter, 'sequence_overlap',
+                to define how many frames of overlap are permitted between distinct sequences.
+            """
+            sequence_offset = self._data_config['sequence_length'] - self._data_config['sequence_overlap']
+            valid_starting_indices = valid_starting_indices[::sequence_offset]
+            """
+                The above does this:
+                list_example = [1, 2, 3, 4, 5, 6]
+                list_example = [::2]
+                list_example = [1, 3, 5]
+            """
+
+            # Now we we can proceed to extract sequences, but shuffle if necessary
+            if self._data_config['shuffle']:
+                valid_starting_indices = shuffle(valid_starting_indices)
+
+            # Determine the training and validation split
+            total_number_sequences = len(valid_starting_indices)
+            samples_for_training = int(self._data_config['train_to_valid'] * total_number_sequences)
+            training_indices = valid_starting_indices[0:samples_for_training]
+            validation_indices = valid_starting_indices[samples_for_training:]
+
+            # Do actual data set creation
+            training_frames = []
+            training_labels = []
+            validation_frames = []
+            validation_labels = []
+            # Training data
+            for starting_index in training_indices:
+                training_frames.append(temp_image[starting_index:
+                                                  starting_index+self._data_config['sequence_length']])
+                training_labels.append(temp_label[starting_index:
+                                                  starting_index+self._data_config['sequence_length']])
+            training_data = (training_frames, training_labels)
+            # Validation data
+            for starting_index in validation_indices:
+                validation_frames.append(temp_image[starting_index:
+                                                    starting_index+self._data_config['sequence_length']])
+                validation_labels.append(temp_label[starting_index:
+                                                    starting_index+self._data_config['sequence_length']])
+            validation_data = (validation_frames, validation_labels)
+
+            return [training_data, validation_data]
