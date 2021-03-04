@@ -34,15 +34,24 @@ class BatchLoader:
                                          self._data_config['height'],
                                          self._data_config['width'],
                                          3), dtype=np.float32)
+        self.validation_images = np.zeros((0, self._data_config['sequence_length'],
+                                           self._data_config['height'],
+                                           self._data_config['width'],
+                                           3), dtype=np.float32)
 
         if self._data_config['sequence'] and self._data_config['throttle']:
             self.training_labels = np.zeros((0, self._data_config['sequence_length'], 2),
                                             self.d_type)
+            self.validation_labels = np.zeros((0, self._data_config['sequence_length'], 2),
+                                              self.d_type)
         elif self._data_config['sequence'] and not self._data_config['throttle']:
             self.training_labels = np.zeros((0, self._data_config['sequence_length']),
                                             self.d_type)
+            self.validation_labels = np.zeros((0, self._data_config['sequence_length']),
+                                              self.d_type)
         else:
             self.training_labels = np.zeros((0,), self.d_type)
+            self.validation_labels = np.zeros((0,), self.d_type)
 
         # Create a list of all the HDF5 in the data directory
         self._files = glob.glob(self._data_config['data_directory'])
@@ -142,6 +151,10 @@ class BatchLoader:
             self.training_labels = np.concatenate((self.training_labels, temp_label), axis=0)
 
         # Done reading files; shuffle if required
+        """
+            Here each data frame is an independent entity, so treat it as a jumbled data blob and 
+            shuffle individual frames indiscriminately across files
+        """
         if self._data_config['shuffle']:
             self.training_images, self.training_labels = shuffle(self.training_images,
                                                                  self.training_labels)
@@ -224,13 +237,22 @@ class BatchLoader:
                                                   starting_index+self._data_config['sequence_length']])
                 training_labels.append(temp_label[starting_index:
                                                   starting_index+self._data_config['sequence_length']])
-            training_data = (training_frames, training_labels)
+
             # Validation data
             for starting_index in validation_indices:
                 validation_frames.append(temp_image[starting_index:
                                                     starting_index+self._data_config['sequence_length']])
                 validation_labels.append(temp_label[starting_index:
                                                     starting_index+self._data_config['sequence_length']])
-            validation_data = (validation_frames, validation_labels)
 
-            return [training_data, validation_data]
+            # Finished processing the given file, so concatenate with overall data sets
+            self.training_images = np.concatenate((self.training_images, np.asarray(training_frames)), axis=0)
+            self.training_labels = np.concatenate((self.training_labels, np.asarray(training_labels)), axis=0)
+            self.validation_images = np.concatenate((self.validation_images, np.asarray(validation_frames)), axis=0)
+            self.validation_labels = np.concatenate((self.training_labels, np.asarray(validation_labels)), axis=0)
+
+        # Package the data
+        training_data = [self.training_images, self.training_labels]
+        validation_data = [self.validation_images, self.validation_labels]
+
+        return [training_data, validation_data]
