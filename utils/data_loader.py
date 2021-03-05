@@ -23,11 +23,11 @@ class BatchLoader:
         # Classifier or regression?
         self._mode = mode
 
-        # Set data type
+        # Set data type for labels
         if mode == 'regression':
-            self.d_type = np.float32
+            self._d_type = np.float32
         else:
-            self.d_type = np.int32
+            self._d_type = np.int32
 
         # Initiate numpy array for training images and training labels based on desired config
         self.training_images = np.zeros((0, self._data_config['sequence_length'],
@@ -41,17 +41,17 @@ class BatchLoader:
 
         if self._data_config['sequence'] and self._data_config['throttle']:
             self.training_labels = np.zeros((0, self._data_config['sequence_length'], 2),
-                                            self.d_type)
+                                            self._d_type)
             self.validation_labels = np.zeros((0, self._data_config['sequence_length'], 2),
-                                              self.d_type)
+                                              self._d_type)
         elif self._data_config['sequence'] and not self._data_config['throttle']:
             self.training_labels = np.zeros((0, self._data_config['sequence_length']),
-                                            self.d_type)
+                                            self._d_type)
             self.validation_labels = np.zeros((0, self._data_config['sequence_length']),
-                                              self.d_type)
+                                              self._d_type)
         else:
-            self.training_labels = np.zeros((0,), self.d_type)
-            self.validation_labels = np.zeros((0,), self.d_type)
+            self.training_labels = np.zeros((0,), self._d_type)
+            self.validation_labels = np.zeros((0,), self._d_type)
 
         # Create a list of all the HDF5 in the data directory
         self._files = glob.glob(self._data_config['data_directory'])
