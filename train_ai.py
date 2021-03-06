@@ -7,6 +7,8 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
 from utils import process_configuration
+from utils.data_loader import  BatchLoader
+import importlib
 
 
 # GPU identifier
@@ -30,7 +32,29 @@ class TrainAI(object):
         """
         self.training_configuration = process_configuration.ConfigurationProcessor(input_config)
 
+        # Define the model
+        model_definition = self._define_model()
+        self.model = model_definition(self.training_configuration.network_dictionary)
 
+        # Create the data loader
+        self.data_loader = BatchLoader(self.training_configuration.data_dictionary,
+                                       self.model.mode)
+
+    def _define_model(self) -> importlib.import_module:
+        """
+            Pull the model definition from the correct script in the
+            models directory.
+
+        Returns
+        -------
+        model: (limportlib.import_module) desired model to train
+        """
+        try:
+            model = importlib.import_module(('models.'+self.training_configuration.network_dictionary['model_name']))
+            model = getattr(model, self.training_configuration.network_dictionary['model_name'])
+        except ImportError:
+            raise ValueError('models/{}.py is not defined!')
+        return model
 
     def train_model(self):
         print("Need to be code this.")
