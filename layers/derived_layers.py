@@ -41,7 +41,7 @@ def standard_convolution_block(x: tf.Tensor,
     return x
 
 
-def standard_sequential_convolution_block(x: tf.Tensor,
+def standard_convolution_block_sequential(x: tf.Tensor,
                                           kernel_size: (int, int),
                                           filters: int,
                                           batch_norm: bool = True,
