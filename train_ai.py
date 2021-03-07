@@ -32,13 +32,13 @@ class TrainAI(object):
         """
         self.training_configuration = process_configuration.ConfigurationProcessor(input_config)
 
-        # Define the model
+        # Define the model constructor
         model_definition = self._define_model()
         self.model_constructor = model_definition(self.training_configuration.network_dictionary)
 
         # Create the data loader
         self.data_loader = BatchLoader(self.training_configuration.data_dictionary,
-                                       self.model.mode)
+                                       self.model_constructor.mode)
 
         # Define the image dimensions of the data
         self.image_height = self.training_configuration.data_dictionary['image_height']
@@ -70,9 +70,6 @@ class TrainAI(object):
         return model
 
     def train_model(self):
-        print("Need to be code this.")
-
-    def train_model(self):
         """
             Perform actual training of the model.
         """
@@ -91,6 +88,7 @@ class TrainAI(object):
 
         # Provide the user with a summary
         keras_model.summary()
+
 
 if __name__ == '__main__':
     train_ai = TrainAI(sys.argv[1])

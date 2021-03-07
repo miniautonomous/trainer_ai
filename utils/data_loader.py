@@ -31,12 +31,12 @@ class BatchLoader:
 
         # Initiate numpy array for training images and training labels based on desired config
         self.training_images = np.zeros((0, self._data_config['sequence_length'],
-                                         self._data_config['height'],
-                                         self._data_config['width'],
+                                         self._data_config['image_height'],
+                                         self._data_config['image_width'],
                                          3), dtype=np.float32)
         self.validation_images = np.zeros((0, self._data_config['sequence_length'],
-                                           self._data_config['height'],
-                                           self._data_config['width'],
+                                           self._data_config['image_height'],
+                                           self._data_config['image_width'],
                                            3), dtype=np.float32)
 
         if self._data_config['sequence'] and self._data_config['throttle']:
@@ -103,8 +103,8 @@ class BatchLoader:
 
             # Create an image array
             # TODO: Verify the data type!
-            temp_image = np.zeros((len(group_list), int(file_attributes['imageHeight']),
-                                   int(file_attributes['imageWidth']), 3), np.uint8)
+            temp_image = np.zeros((len(group_list), int(file_attributes['imgHeight']),
+                                   int(file_attributes['imgWidth']), 3), np.uint8)
 
             # Define what type of label is appropriate
             if self._mode == 'regression' and self._data_config['throttle']:
@@ -125,9 +125,9 @@ class BatchLoader:
                     temp_label[index, 0] = np.array(hf[item]['steering'])
                     temp_label[index, 1] = np.array(hf[item]['throttle'])
                 elif self._mode == 'regression' and not self._data_config['throttle']:
-                    temp_label[index, 0] = np.array(hf[item]['steering'])
+                    temp_label[index] = np.array(hf[item]['steering'])
                 else:
-                    temp_label[index, 0] = np.argmax(hf[item]['classIndex'])
+                    temp_label[index] = np.argmax(hf[item]['classIndex'])
 
         return temp_image, temp_label
 

@@ -17,9 +17,9 @@ class StandardRegression(Model):
         super(StandardRegression, self).__init__(network_dictionary=network_dictionary)
 
         # Set the mode of the model: classifier or regression
-        self._mode = 'regression'
+        self.mode = 'regression'
 
-    def build_graph(self, x: tf.Tensor) -> tf.Tensor:
+    def build_graph(self, x: tf.Tensor) -> keras.Model:
         """
             Build the actual graph of the network.
 
@@ -29,7 +29,7 @@ class StandardRegression(Model):
 
         Returns
         -------
-        x: (tf.Tensor) output tensor
+        model: (keras.Model) compiled Keras model ready for training
         """
         # Define the input tensor
         inputs = x
