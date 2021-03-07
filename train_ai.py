@@ -66,6 +66,7 @@ class TrainAI(object):
             model = importlib.import_module('models.'+self.training_configuration.network_dictionary['model_name'])
             model = getattr(model, self.training_configuration.network_dictionary['model_name'])
         except ImportError:
+            model = []
             print('models/{}.py is not defined'.format(self.training_configuration.network_dictionary['model_name']))
         return model
 
@@ -86,8 +87,12 @@ class TrainAI(object):
         # Compile the Keras Model
         keras_model = self.model_constructor.build_graph(input_tensor)
 
-        # Provide the user with a summary
+        # Provide a model summary
         keras_model.summary()
+
+        # Plot the graph
+        if self.training_configuration.training_dictionary['plot_network']:
+            keras.utils.plot_model(keras_model, "model_to_train.png", show_shapes=True)
 
 
 if __name__ == '__main__':

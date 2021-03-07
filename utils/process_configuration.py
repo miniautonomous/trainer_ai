@@ -54,6 +54,9 @@ class ConfigurationProcessor:
                     elif option == 'starting_learning_rate':
                         self.training_dictionary[option] = \
                             self.parser.getfloat(section, option)
+                    elif option == 'plot_network':
+                        self.training_dictionary[option] = \
+                            self.parser.getboolean(section, option)
                     else:
                         self.training_dictionary[option] = \
                             self.parser.get(section, option)
