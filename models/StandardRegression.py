@@ -1,10 +1,11 @@
 import tensorflow as tf
+import tensorflow.keras as keras
 import tensorflow.keras.layers as layers
-from base_model import Model
+from .base_model import Model
 from layers import derived_layers
 
 
-class StandardModel(Model):
+class StandardRegression(Model):
     def __init__(self, network_dictionary: dict):
         """
             The basic regression model used as a test bed for model construction.
@@ -13,10 +14,10 @@ class StandardModel(Model):
         ----------
         network_dictionary: (dict) network configuration dictionary
         """
-        super(StandardModel, self).__init__(network_dictionary=network_dictionary)
+        super(StandardRegression, self).__init__(network_dictionary=network_dictionary)
 
         # Set the mode of the model: classifier or regression
-        self._model = 'regression'
+        self._mode = 'regression'
 
     def build_graph(self, x: tf.Tensor) -> tf.Tensor:
         """
@@ -30,7 +31,12 @@ class StandardModel(Model):
         -------
         x: (tf.Tensor) output tensor
         """
-        x = layers.BatchNormalization()(x)
+        # Define the input tensor
+        inputs = x
+
+        # Perform a batch norm
+        x = keras.layers.TimeDistributed(layers.BatchNormalization())(inputs)
+
         # Entry convolutional block
         x = derived_layers.standard_convolution_block_sequential(x, kernel_size=(7, 7),
                                                                  filters=32, dtype=self._dtype)
@@ -59,4 +65,7 @@ class StandardModel(Model):
         # Output node
         x = layers.Dense(units=1, activation='linear')(x)
 
-        return x
+        # Create the keras model
+        model = keras.Model(inputs=inputs, outputs=x, name='standard_regression')
+
+        return model

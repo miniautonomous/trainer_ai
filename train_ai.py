@@ -7,7 +7,7 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
 from utils import process_configuration
-from utils.data_loader import  BatchLoader
+from utils.data_loader import BatchLoader
 import importlib
 
 
@@ -34,11 +34,24 @@ class TrainAI(object):
 
         # Define the model
         model_definition = self._define_model()
-        self.model = model_definition(self.training_configuration.network_dictionary)
+        self.model_constructor = model_definition(self.training_configuration.network_dictionary)
 
         # Create the data loader
         self.data_loader = BatchLoader(self.training_configuration.data_dictionary,
                                        self.model.mode)
+
+        # Define the image dimensions of the data
+        self.image_height = self.training_configuration.data_dictionary['image_height']
+        self.image_width = self.training_configuration.data_dictionary['image_width']
+
+        # Load the data
+        if self.training_configuration.data_dictionary['sequence']:
+            self.training_data = self.data_loader.load_sequence_from_hdf5()
+        else:
+            self.training_data = self.data_loader.load_from_hdf5()
+
+        # Define the number of samples for training
+        self.n_training_samples = len(self.training_data[0][0])
 
     def _define_model(self) -> importlib.import_module:
         """
@@ -50,18 +63,36 @@ class TrainAI(object):
         model: (limportlib.import_module) desired model to train
         """
         try:
-            model = importlib.import_module(('models.'+self.training_configuration.network_dictionary['model_name']))
+            model = importlib.import_module('models.'+self.training_configuration.network_dictionary['model_name'])
             model = getattr(model, self.training_configuration.network_dictionary['model_name'])
         except ImportError:
-            raise ValueError('models/{}.py is not defined!')
+            print('models/{}.py is not defined'.format(self.training_configuration.network_dictionary['model_name']))
         return model
 
     def train_model(self):
         print("Need to be code this.")
 
+    def train_model(self):
+        """
+            Perform actual training of the model.
+        """
+
+        # Define the input tensor dimension based on the data
+        if self.training_configuration.data_dictionary['sequence']:
+            sequence_length = self.training_configuration.data_dictionary['sequence_length']
+            input_tensor = keras.Input(shape=(sequence_length,
+                                              self.image_height,
+                                              self.image_width, 3))
+        else:
+            input_tensor = keras.Input(shape=(self.image_height,
+                                              self.image_width, 3))
+        # Compile the Keras Model
+        keras_model = self.model_constructor.build_graph(input_tensor)
+
+        # Provide the user with a summary
+        keras_model.summary()
 
 if __name__ == '__main__':
     train_ai = TrainAI(sys.argv[1])
 
-    # Train the model
-    # train_ai.train_model()
+    train_ai.train_model()

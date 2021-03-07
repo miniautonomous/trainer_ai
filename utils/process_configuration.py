@@ -55,7 +55,7 @@ class ConfigurationProcessor:
                         self.training_dictionary[option] = \
                             self.parser.getfloat(section, option)
                     else:
-                        self.network_dictionary[option] = \
+                        self.training_dictionary[option] = \
                             self.parser.get(section, option)
 
             # Network section

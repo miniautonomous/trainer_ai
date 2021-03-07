@@ -7,7 +7,7 @@ epochs: 50
 batch_size: 1
 
 [Network]
-model_name: BaseRegression
+model_name: StandardRegression
 precision: single
 
 [Data]
@@ -17,6 +17,6 @@ data_directory: ../data/*.hdf5
 shuffle: True
 throttle: False
 train_to_valid: 0.85
-sequence: False
+sequence: True
 sequence_length: 5
 sequence_overlap: 2
