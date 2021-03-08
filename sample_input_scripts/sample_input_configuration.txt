@@ -4,11 +4,12 @@ loss: MSE
 decay_type: static
 starting_learning_rate: 0.0001
 decay_steps: 10000
-epochs: 5
+epochs: 50
 batch_size: 1
 plot_network: True
 plot_curve: True
 save_curve: True
+save_model: True
 
 [Network]
 model_name: StandardRegression

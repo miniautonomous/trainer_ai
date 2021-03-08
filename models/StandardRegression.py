@@ -59,7 +59,8 @@ class StandardRegression(Model):
         # Feed it to an LSTM
         x = layers.LSTM(units=40, activation='relu',
                         recurrent_activation='hard_sigmoid',
-                        use_bias=True, kernel_initializer='glorot_uniform',
+                        use_bias=True,
+                        kernel_initializer='glorot_uniform',
                         return_sequences=False)(x)
 
         # Output node

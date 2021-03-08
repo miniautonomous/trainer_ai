@@ -47,7 +47,7 @@ class ConfigurationProcessor:
             # Training section
             if section == 'Training':
                 integer_list = ['decay_steps', 'epochs', 'batch_size']
-                boolean_list = ['plot_network', 'plot_curve', 'save_curve']
+                boolean_list = ['plot_network', 'plot_curve', 'save_curve', 'save_model']
                 for option in self.parser.options(section):
                     if option in integer_list:
                         self.training_dictionary[option] = \

@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 import string
 import sys
 import os
@@ -7,6 +6,7 @@ import tensorflow as tf
 from tensorflow import keras
 from utils import process_configuration
 from utils.data_loader import BatchLoader
+from utils.plot_results import plot_results
 import importlib
 
 
@@ -179,34 +179,12 @@ class TrainAI(object):
         # Plot the results
         history_keys = list(history.history.keys())
         if self.training_configuration.training_dictionary['plot_curve']:
-            # Plot the training and validation loss
-            fig = plt.figure(figsize=(20, 10))
+            plot_results(history, history_keys, self.training_configuration.training_dictionary)
 
-            # Plot loss
-            ax = plt.subplot(2, 1, 1)
-            plt.subplots_adjust(hspace=0.6)
-            ax.plot(history.history[history_keys[0]], color='b', linestyle='-', linewidth=5)
-            ax.plot(history.history[history_keys[2]],  color='r', linestyle='--', linewidth=5)
-            plt.title('Loss', fontsize=18)
-            plt.xlabel('epoch', fontsize=16)
-            plt.ylabel('Loss', fontsize=16)
-            plt.xticks(fontsize=14)
-            plt.yticks(fontsize=14)
-            plt.legend(['train', 'validation'], loc='best')
-
-            # Plot accuracy
-            ax = plt.subplot(2, 1, 2)
-            ax.plot(history.history[history_keys[1]], color='b', linestyle='-', linewidth=5)
-            ax.plot(history.history[history_keys[3]],  color='r', linestyle='--', linewidth=5)
-            plt.title('Accuracy', fontsize=18)
-            plt.xlabel('epoch', fontsize=16)
-            plt.ylabel('Mean Absolute Error', fontsize=16)
-            plt.xticks(fontsize=14)
-            plt.yticks(fontsize=14)
-            plt.legend(['train', 'validation'], loc='best')
-            if self.training_configuration.training_dictionary['save_curve']:
-                fig.savefig('loss_and_accuracy.png')
-            plt.show()
+        # Save model
+        if self.training_configuration.training_dictionary['save_model']:
+            keras.models.save_model(keras_model,
+                                    self.training_configuration.network_dictionary['model_name']+'.h5')
 
 
 if __name__ == '__main__':
