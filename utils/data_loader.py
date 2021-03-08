@@ -249,7 +249,7 @@ class BatchLoader:
             self.training_images = np.concatenate((self.training_images, np.asarray(training_frames)), axis=0)
             self.training_labels = np.concatenate((self.training_labels, np.asarray(training_labels)), axis=0)
             self.validation_images = np.concatenate((self.validation_images, np.asarray(validation_frames)), axis=0)
-            self.validation_labels = np.concatenate((self.training_labels, np.asarray(validation_labels)), axis=0)
+            self.validation_labels = np.concatenate((self.validation_labels, np.asarray(validation_labels)), axis=0)
 
         # Package the data
         training_data = [self.training_images, self.training_labels]

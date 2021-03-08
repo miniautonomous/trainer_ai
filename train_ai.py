@@ -1,11 +1,10 @@
 import numpy as np
+import matplotlib.pyplot as plt
 import string
 import sys
-import time
 import os
 import tensorflow as tf
 from tensorflow import keras
-from tensorflow.keras import layers
 from utils import process_configuration
 from utils.data_loader import BatchLoader
 import importlib
@@ -52,6 +51,64 @@ class TrainAI(object):
 
         # Define the number of samples for training
         self.n_training_samples = len(self.training_data[0][0])
+        self.n_validation_samples = len(self.training_data[1][0])
+
+    def create_dataset(self, images: np.array, labels: np.ndarray) -> tf.data.Dataset:
+        """
+            Create a Tensorflow Dataset based on images and corresponding labels.
+
+        Parameters
+        ----------
+        images: (np.ndarray) image data set
+        labels: (np.ndarray) corresponding labels
+
+        Returns
+        -------
+        tf_dataset: (tf.data.Dataset) tf dataset comprised of the images and labels
+        """
+        if not self.training_configuration.data_dictionary['large_data']:
+            tf_dataset = tf.data.Dataset.from_tensor_slices((images, labels))\
+                .batch(batch_size=self.training_configuration.training_dictionary['batch_size'],
+                       drop_remainder=True)\
+                .cache()\
+                .repeat()
+        else:
+            image_blocks = np.array_split((images, 2))
+            label_blocks = np.array_split((labels, 2))
+            dataset_a = tf.data.Dataset.from_tensor_slices((image_blocks[0], label_blocks[0]))
+            dataset_b = tf.data.Dataset.from_tensor_slices((image_blocks[1], label_blocks[1]))
+            tf_dataset = dataset_a.concatenate(dataset_b)\
+                .batch(batch_size=self.training_configuration.training_dictionary['batch_size'],
+                       drop_remainder=True)\
+                .cache().\
+                repeat()
+
+        return tf_dataset
+
+    def define_loss_and_metric(self):
+        """
+            Defines the loss (and metric( according to the configuration scripts
+
+        Returns
+        -------
+        loss_type: (tf.keras.losses) type of loss desired for simulation
+        metric: (string) type of metric to use when monitoring performance
+        """
+        if self.training_configuration.training_dictionary['loss'] == 'MSE':
+            loss_type = tf.keras.losses.MeanAbsoluteError()
+            metric = 'mean_absolute_error'
+        elif self.training_configuration.training_dictionary['loss'] == 'MAE':
+            loss_type = tf.keras.losses.MeanAbsoluteError()
+            metric = 'mean_absolute_error'
+        elif self.training_configuration.training_dictionary['loss'] == 'ENTROPY':
+            loss_type = tf.keras.losses.CategoricalCrossentropy()
+            metric = 'accuracy'
+        else:
+            print('Unrecognized loss function: please select from MSE, MAE, or ENTROPY.')
+            loss_type = {}
+            metric = ''
+            exit(-1)
+        return loss_type, metric
 
     def _define_model(self) -> importlib.import_module:
         """
@@ -93,6 +150,63 @@ class TrainAI(object):
         # Plot the graph
         if self.training_configuration.training_dictionary['plot_network']:
             keras.utils.plot_model(keras_model, "model_to_train.png", show_shapes=True)
+
+        # Create a dataset
+        training_dataset = self.create_dataset(self.training_data[0][0], self.training_data[0][1])
+        validation_dataset = self.create_dataset(self.training_data[1][0], self.training_data[1][1])
+
+        # Define a loss and metric
+        loss, metric = self.define_loss_and_metric()
+
+        # Compile the model
+        keras_model.compile(
+            optimizer=self.training_configuration.training_dictionary['optimizer'],
+            loss=loss,
+            metrics=metric
+        )
+
+        history = keras_model.fit(
+            training_dataset,
+            batch_size=self.training_configuration.training_dictionary['batch_size'],
+            steps_per_epoch=self.n_training_samples
+            // self.training_configuration.training_dictionary['batch_size'],
+            epochs=self.training_configuration.training_dictionary['epochs'],
+            validation_data=validation_dataset,
+            validation_steps=self.n_validation_samples
+            // self.training_configuration.training_dictionary['batch_size'] + 1,
+        )
+
+        # Plot the results
+        history_keys = list(history.history.keys())
+        if self.training_configuration.training_dictionary['plot_curve']:
+            # Plot the training and validation loss
+            fig = plt.figure(figsize=(20, 10))
+
+            # Plot loss
+            ax = plt.subplot(2, 1, 1)
+            plt.subplots_adjust(hspace=0.6)
+            ax.plot(history.history[history_keys[0]], color='b', linestyle='-', linewidth=5)
+            ax.plot(history.history[history_keys[2]],  color='r', linestyle='--', linewidth=5)
+            plt.title('Loss', fontsize=18)
+            plt.xlabel('epoch', fontsize=16)
+            plt.ylabel('Loss', fontsize=16)
+            plt.xticks(fontsize=14)
+            plt.yticks(fontsize=14)
+            plt.legend(['train', 'validation'], loc='best')
+
+            # Plot accuracy
+            ax = plt.subplot(2, 1, 2)
+            ax.plot(history.history[history_keys[1]], color='b', linestyle='-', linewidth=5)
+            ax.plot(history.history[history_keys[3]],  color='r', linestyle='--', linewidth=5)
+            plt.title('Accuracy', fontsize=18)
+            plt.xlabel('epoch', fontsize=16)
+            plt.ylabel('Mean Absolute Error', fontsize=16)
+            plt.xticks(fontsize=14)
+            plt.yticks(fontsize=14)
+            plt.legend(['train', 'validation'], loc='best')
+            if self.training_configuration.training_dictionary['save_curve']:
+                fig.savefig('loss_and_accuracy.png')
+            plt.show()
 
 
 if __name__ == '__main__':

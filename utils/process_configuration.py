@@ -47,6 +47,7 @@ class ConfigurationProcessor:
             # Training section
             if section == 'Training':
                 integer_list = ['decay_steps', 'epochs', 'batch_size']
+                boolean_list = ['plot_network', 'plot_curve', 'save_curve']
                 for option in self.parser.options(section):
                     if option in integer_list:
                         self.training_dictionary[option] = \
@@ -54,7 +55,7 @@ class ConfigurationProcessor:
                     elif option == 'starting_learning_rate':
                         self.training_dictionary[option] = \
                             self.parser.getfloat(section, option)
-                    elif option == 'plot_network':
+                    elif option in boolean_list:
                         self.training_dictionary[option] = \
                             self.parser.getboolean(section, option)
                     else:
@@ -71,7 +72,7 @@ class ConfigurationProcessor:
             if section == 'Data':
                 integer_list = ['image_height', 'image_width',
                                 'sequence_length', 'sequence_overlap']
-                boolean_list = ['shuffle', 'throttle', 'sequence']
+                boolean_list = ['shuffle', 'throttle', 'sequence', 'large_data']
                 for option in self.parser.options(section):
                     if option in integer_list:
                         self.data_dictionary[option] = \
