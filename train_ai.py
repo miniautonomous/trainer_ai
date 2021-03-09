@@ -8,6 +8,7 @@ from utils import process_configuration
 from utils.data_loader import BatchLoader
 from utils.plot_results import plot_results
 import importlib
+from tensorflow.keras import backend as K
 
 
 # GPU identifier
@@ -85,6 +86,25 @@ class TrainAI(object):
 
         return tf_dataset
 
+    @staticmethod
+    def r2_coefficient(y_true: tf.Tensor, y_pred: tf.Tensor):
+        """
+            Callculate the R2 value for regression models.
+
+        Parameters
+        ----------
+        y_true: (tf.Tensor) actual value from data
+        y_pred: (tf.Tensor) inference output from model
+
+        Returns
+        -------
+        R2: (float) R2 metric
+        """
+        residual = K.sum(K.square(y_true - y_pred))
+        total = K.sum(K.square(y_true - K.mean(y_true)))
+        r2 = 1 - residual / (total + K.epsilon())
+        return r2
+
     def define_loss_and_metric(self):
         """
             Defines the loss (and metric( according to the configuration scripts
@@ -95,11 +115,11 @@ class TrainAI(object):
         metric: (string) type of metric to use when monitoring performance
         """
         if self.training_configuration.training_dictionary['loss'] == 'MSE':
-            loss_type = tf.keras.losses.MeanAbsoluteError()
-            metric = 'mean_absolute_error'
+            loss_type = tf.keras.losses.MeanSquaredError()
+            metric = ['mae']
         elif self.training_configuration.training_dictionary['loss'] == 'MAE':
             loss_type = tf.keras.losses.MeanAbsoluteError()
-            metric = 'mean_absolute_error'
+            metric = ['mae']
         elif self.training_configuration.training_dictionary['loss'] == 'ENTROPY':
             loss_type = tf.keras.losses.CategoricalCrossentropy()
             metric = 'accuracy'
@@ -154,6 +174,12 @@ class TrainAI(object):
         # Create a dataset
         training_dataset = self.create_dataset(self.training_data[0][0], self.training_data[0][1])
         validation_dataset = self.create_dataset(self.training_data[1][0], self.training_data[1][1])
+
+        # Create an iterator
+        # training_iter = training_dataset.__iter__()
+        # validation_iter = validation_dataset.__iter__()
+        # x_train, y_train = training_iter.get_next()
+        # x_valid, y_valid = validation_iter.get_next()
 
         # Define a loss and metric
         loss, metric = self.define_loss_and_metric()
