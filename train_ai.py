@@ -193,7 +193,6 @@ class TrainAI(object):
 
         history = keras_model.fit(
             training_dataset,
-            batch_size=self.training_configuration.training_dictionary['batch_size'],
             steps_per_epoch=self.n_training_samples
             // self.training_configuration.training_dictionary['batch_size'],
             epochs=self.training_configuration.training_dictionary['epochs'],
