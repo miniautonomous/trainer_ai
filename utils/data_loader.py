@@ -118,7 +118,7 @@ class BatchLoader:
             for index, item in enumerate(group_list):
                 # Read image
                 # TODO: discuss this with Francois!
-                temp_image[index, :, :, 0:3] = np.array(hf[item]['imgLeft'])
+                temp_image[index, :, :, 0:3] = np.array(hf[item]['image'])
 
                 # Read label
                 if self._mode == 'regression' and self._data_config['throttle']:

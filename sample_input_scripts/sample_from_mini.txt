@@ -1,0 +1,28 @@
+[Training]
+optimizer: rmsprop
+loss: MSE
+decay_type: static
+starting_learning_rate: 0.0001
+decay_steps: 10000
+epochs: 10
+batch_size: 1
+plot_network: True
+plot_curve: True
+save_curve: True
+save_model: True
+
+[Network]
+model_name: StandardRegression
+precision: single
+
+[Data]
+image_height: 47
+image_width: 84
+data_directory: /home/jesbot/CodeBase/miniAutonomous/data/*.hdf5
+shuffle: True
+throttle: False
+large_data: False
+train_to_valid: 0.85
+sequence: True
+sequence_length: 5
+sequence_overlap: 2
