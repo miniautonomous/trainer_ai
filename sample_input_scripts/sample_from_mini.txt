@@ -16,8 +16,8 @@ model_name: StandardRegression
 precision: single
 
 [Data]
-image_height: 47
-image_width: 84
+image_height: 120
+image_width: 160
 data_directory: data/*.hdf5
 shuffle: True
 throttle: True
