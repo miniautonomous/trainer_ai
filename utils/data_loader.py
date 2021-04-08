@@ -121,10 +121,26 @@ class BatchLoader:
 
                 # Read label
                 if self._mode == 'regression' and self._data_config['throttle']:
-                    temp_label[index, 0] = np.array(hf[item]['steering'])
-                    temp_label[index, 1] = np.array(hf[item]['throttle'])
+                    if self._data_config['normalize']:
+                        temp_label[index, 0] = self.map_function(temp_label[index, 0],
+                                                                 [file_attributes['steerMin'],
+                                                                 file_attributes['steerMax'],
+                                                                 -100, 100])
+                        temp_label[index, 0] = self.map_function(temp_label[index, 0],
+                                                                 [file_attributes['throttleMin'],
+                                                                 file_attributes['throttleMax'],
+                                                                 0, 100])
+                    else:
+                        temp_label[index, 0] = np.array(hf[item]['steering'])
+                        temp_label[index, 1] = np.array(hf[item]['throttle'])
                 elif self._mode == 'regression' and not self._data_config['throttle']:
-                    temp_label[index] = np.array(hf[item]['steering'])
+                    if self._data_config['normalize']:
+                        temp_label[index, 0] = self.map_function(temp_label[index, 0],
+                                                                 [file_attributes['steerMin'],
+                                                                 file_attributes['steerMax'],
+                                                                 -100, 100])
+                    else:
+                        temp_label[index] = np.array(hf[item]['steering'])
                 else:
                     temp_label[index] = np.argmax(hf[item]['classIndex'])
 
@@ -255,3 +271,25 @@ class BatchLoader:
         validation_data = [self.validation_images, self.validation_labels]
 
         return [training_data, validation_data]
+
+    @staticmethod
+    def map_function(input_value: int, map_ranges: list) -> int:
+        """
+          This methods takes an "inputVal" and returns the mapped value between the
+          new range.  The mapRanges is a list of 4 values.
+
+        Parameters
+        ----------
+        input_value: (int) actual PWM value
+        map_ranges:
+          mapRanges[0] => The minimum value of the "inputVal" range
+          mapRanges[1] => The maximum value of the "inputVal" range
+          mapRanges[2] => The minimum value of the mapped range
+          mapRanges[3] => The maximum value of the mapped range
+
+        Returns
+        -------
+        scaled_value = (int) resulting normalized value of the PWM
+        """
+        return ((input_value - map_ranges[0]) / (map_ranges[1] - map_ranges[0]) *
+                (map_ranges[3] - map_ranges[2]) + map_ranges[2])

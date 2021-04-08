@@ -26,3 +26,4 @@ train_to_valid: 0.85
 sequence: True
 sequence_length: 5
 sequence_overlap: 2
+normalize: True

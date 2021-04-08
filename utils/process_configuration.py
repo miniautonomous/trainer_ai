@@ -72,7 +72,7 @@ class ConfigurationProcessor:
             if section == 'Data':
                 integer_list = ['image_height', 'image_width',
                                 'sequence_length', 'sequence_overlap']
-                boolean_list = ['shuffle', 'throttle', 'sequence', 'large_data']
+                boolean_list = ['shuffle', 'throttle', 'sequence', 'large_data', 'normalize']
                 for option in self.parser.options(section):
                     if option in integer_list:
                         self.data_dictionary[option] = \
