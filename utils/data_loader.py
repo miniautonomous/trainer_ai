@@ -122,11 +122,11 @@ class BatchLoader:
                 # Read label
                 if self._mode == 'regression' and self._data_config['throttle']:
                     if self._data_config['normalize']:
-                        temp_label[index, 0] = self.map_function(temp_label[index, 0],
+                        temp_label[index, 0] = self.map_function(int(np.array(hf[item]['steering'])),
                                                                  [int(file_attributes['steerMin']),
                                                                  int(file_attributes['steerMax']),
                                                                  -100, 100])
-                        temp_label[index, 0] = self.map_function(temp_label[index, 0],
+                        temp_label[index, 1] = self.map_function(int(np.array(hf[item]['throttle'])),
                                                                  [int(file_attributes['throttleMin']),
                                                                  int(file_attributes['throttleMax']),
                                                                  0, 100])
@@ -135,7 +135,7 @@ class BatchLoader:
                         temp_label[index, 1] = np.array(hf[item]['throttle'])
                 elif self._mode == 'regression' and not self._data_config['throttle']:
                     if self._data_config['normalize']:
-                        temp_label[index, 0] = self.map_function(temp_label[index, 0],
+                        temp_label[index, 0] = self.map_function(hf[item]['steering'],
                                                                  [file_attributes['steerMin'],
                                                                  file_attributes['steerMax'],
                                                                  -100, 100])
