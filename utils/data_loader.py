@@ -117,7 +117,6 @@ class BatchLoader:
             # Go through the group list and do the actual reading
             for index, item in enumerate(group_list):
                 # Read image
-                # TODO: discuss this with Francois!
                 temp_image[index, :, :, 0:3] = np.array(hf[item]['image'])
 
                 # Read label

@@ -64,7 +64,7 @@ class StandardRegression(Model):
                         return_sequences=False)(x)
 
         # Output node
-        x = layers.Dense(units=1, activation='linear')(x)
+        x = layers.Dense(units=2, activation='linear')(x)
 
         # Create the keras model
         model = keras.Model(inputs=inputs, outputs=x, name='standard_regression')
