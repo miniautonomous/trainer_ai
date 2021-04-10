@@ -8,8 +8,11 @@ from utils import process_configuration
 from utils.data_loader import BatchLoader
 from utils.plot_results import plot_results
 import importlib
-from tensorflow.keras import backend as K
-
+# from tensorflow.keras import backend as K
+# K.set_learning_phase(0)
+from tensorflow.python.compiler.tensorrt import trt_convert as trt
+from tensorflow.python.framework import graph_io
+from tensorflow.python.framework.convert_to_constants import convert_variables_to_constants_v2
 
 # GPU identifier
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
@@ -86,24 +89,24 @@ class TrainAI(object):
 
         return tf_dataset
 
-    @staticmethod
-    def r2_coefficient(y_true: tf.Tensor, y_pred: tf.Tensor):
-        """
-            Callculate the R2 value for regression models.
-
-        Parameters
-        ----------
-        y_true: (tf.Tensor) actual value from data
-        y_pred: (tf.Tensor) inference output from model
-
-        Returns
-        -------
-        R2: (float) R2 metric
-        """
-        residual = K.sum(K.square(y_true - y_pred))
-        total = K.sum(K.square(y_true - K.mean(y_true)))
-        r2 = 1 - residual / (total + K.epsilon())
-        return r2
+    # @staticmethod
+    # def r2_coefficient(y_true: tf.Tensor, y_pred: tf.Tensor):
+    #     """
+    #         Callculate the R2 value for regression models.
+    #
+    #     Parameters
+    #     ----------
+    #     y_true: (tf.Tensor) actual value from data
+    #     y_pred: (tf.Tensor) inference output from model
+    #
+    #     Returns
+    #     -------
+    #     R2: (float) R2 metric
+    #     """
+    #     residual = K.sum(K.square(y_true - y_pred))
+    #     total = K.sum(K.square(y_true - K.mean(y_true)))
+    #     r2 = 1 - residual / (total + K.epsilon())
+    #     return r2
 
     def define_loss_and_metric(self):
         """
@@ -208,9 +211,20 @@ class TrainAI(object):
 
         # Save model
         if self.training_configuration.training_dictionary['save_model']:
-            keras.models.save_model(keras_model,
-                                    self.training_configuration.network_dictionary['model_name']+'.h5')
+            path_to_save = 'test_save'
+            converted_model_path = 'test_save_converted.h5'
+            model_name = 'test_save/saved_model.h5'
+            keras.models.save_model(keras_model, path_to_save)
 
+            keras.backend.clear_session()
+            tf.keras.backend.set_learning_phase(0)
+
+            # Create a converter
+            converter = trt.TrtGraphConverterV2(input_saved_model_dir=path_to_save)
+            converter.convert()
+
+            # Save the model
+            converter.save(converted_model_path)
 
 if __name__ == '__main__':
     train_ai = TrainAI(sys.argv[1])
