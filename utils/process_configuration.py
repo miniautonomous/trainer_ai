@@ -65,8 +65,12 @@ class ConfigurationProcessor:
             # Network section
             if section == 'Network':
                 for option in self.parser.options(section):
-                    self.network_dictionary[option] = \
-                        self.parser.get(section, option)
+                    if option == 'save_to_trt':
+                        self.network_dictionary[option] = \
+                            self.parser.getboolean(section, option)
+                    else:
+                        self.network_dictionary[option] = \
+                            self.parser.get(section, option)
 
             # Data section
             if section == 'Data':
