@@ -1,7 +1,3 @@
-"""
-  Decription:
-    Script to run the a trained Keras.
-"""
 import time
 import numpy as np
 import os
@@ -9,7 +5,14 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 from tensorflow.python.client import device_lib
 from utils.data_loader import BatchLoader
-# from tsDSP import tsDSP
+
+"""
+    File: dnn_inference.py
+    
+    Purpose: 
+        Run inference on a test data set to quantify performance.
+
+"""
 
 # GPU identifier
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
@@ -54,19 +57,14 @@ data_loader = BatchLoader(data_dictionary,
                           'regression')
 
 # Read image and label data from the test file
-image_data, reference_label = data_loader.read_data_file(test_path + test_file)
+image_data, reference_labels, file_attributes = data_loader.read_data_file(test_path + test_file)
 
 # Number of images and labels
 number_entries = len(image_data)
-#=================================== Initialize the ts lists ======================================#
-# reference_label = tsDSP(None)
-spY = tsDSP(None)
-# Build the new time series names AND Get the current file targets data, i.e. ground
-# truth for regression
-prediction_name = ['Predict - steering']
-# Create the new prediction time series
-spY.new(prediction_name)
-#==================================== Perform ALL the inferences ==================================#
+
+# Predicted label array
+predicted_labels = np.empty([0], dtype=np.float32)
+
 # Need to create a buffer for the sequence
 image_in = np.zeros((1,
                      sequence_length,
@@ -80,22 +78,24 @@ for image_index in range(0, len(image_data) - sequence_length):
         print(f'processing frame => {image_index}')
     image_in[0, :, :, :, :] = image_data[image_index:image_index + sequence_length, :, :, :]
     # Save to the ts
-    spY.addNewDataPoint(nn_model.predict(image_in)[0][0], 'Predict - steering')
-#============================ Compute AND save the results/plots to file ==========================#
-groundTruth = reference_label.getY('steering')[sequence_length:]
-resDiff = groundTruth-spY.getY(f'Predict - steering')
-mse = np.sqrt(np.mean(resDiff**2))
-ampRange = reference_label.ts[0].prop["max"] - reference_label.ts[0].prop["min"]
+    np.append(predicted_labels, nn_model.predict(image_in)[0][0])
+
+# Compute RMSE and save the results
+ground_truth = reference_labels[0][sequence_length:]
+residual_difference = ground_truth - predicted_labels
+rmse = np.sqrt(np.mean(residual_difference ** 2))
+amplitude_range = file_attributes.prop['steerMax'] - file_attributes.prop['steerMin']
 # Build the plot title
-textTitle = f'Test File Name => {test_file}\nMSE (%) => {100 * mse / ampRange:2.1f}'
-#---------------------------Create the associated plot file. i.e. png------------------------------#
+text_title = f'Test File Name => {test_file}\nMSE (%) => {100 * rmse / amplitude_range:2.1f}'
+
+# Create a plot
 plt.figure(figsize=(12, 8))
-plt.plot(groundTruth, 'g', linewidth=4.0)
-plt.plot(spY.getY('Predict - steering'), 'r-')
+plt.plot(ground_truth, 'g', linewidth=4.0)
+plt.plot(predicted_labels, 'r-')
 plt.ylabel('Normalized Steering Angle')
 plt.xlabel('Frame Index')
 plt.grid(True)
-plt.legend([f'Ground Truth - {reference_label.ts[0].prop["name"]}', spY.ts[0].prop['name']], loc='best')
+plt.legend(['Ground Truth - Steering', 'Inference - Steering'], loc='best')
 plt.ylim(-100, 100)
-plt.title(textTitle)
+plt.title(text_title)
 plt.savefig(f'{dnn_path + time.strftime("%y%m%d" + "." + "%H%M%S") + test_file[:-5]}_steering.png')
