@@ -11,7 +11,6 @@ from utils.data_loader import BatchLoader
     
     Purpose: 
         Run inference on a test data set to quantify performance.
-
 """
 
 # GPU identifier
@@ -23,14 +22,14 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 # DNN File
 dnn_path = './model_files/'
-dnnFile = 'TestModel.h5'
+dnn_file = 'StandardRegression.h5'
 
 # Test File
-test_path = './data_files/'
-test_file = 'TestData.hdf5'
+test_path = './test_files/'
+test_file = '210413_091532_miniCar_.hdf5'
 
 # Load the model
-nn_model = tf.keras.models.load_model(dnn_path + dnnFile,
+nn_model = tf.keras.models.load_model(dnn_path + dnn_file,
                                       custom_objects={"tf": tf})
 nn_model.summary()
 # First retrieve the model input sizes
@@ -50,7 +49,7 @@ data_dictionary = {'image_width': image_width,
                    'sequence': True,
                    'sequence_length': 5,
                    'sequence_overlap': 2,
-                   'normalize': False}
+                   'normalize': True}
 
 # Create the data loader
 data_loader = BatchLoader(data_dictionary,
@@ -63,7 +62,8 @@ image_data, reference_labels, file_attributes = data_loader.read_data_file(test_
 number_entries = len(image_data)
 
 # Predicted label array
-predicted_labels = np.empty([0], dtype=np.float32)
+predicted_steering = np.empty([0])
+predicted_throttle = np.empty([0])
 
 # Need to create a buffer for the sequence
 image_in = np.zeros((1,
@@ -77,25 +77,44 @@ for image_index in range(0, len(image_data) - sequence_length):
     if image_index % 50 == 0:
         print(f'processing frame => {image_index}')
     image_in[0, :, :, :, :] = image_data[image_index:image_index + sequence_length, :, :, :]
-    # Save to the ts
-    np.append(predicted_labels, nn_model.predict(image_in)[0][0])
+    # Perform inference
+    inference = nn_model.predict(image_in)[0]
+    predicted_steering = np.append(predicted_steering, inference[0])
+    predicted_throttle = np.append(predicted_throttle, inference[1])
 
 # Compute RMSE and save the results
-ground_truth = reference_labels[0][sequence_length:]
-residual_difference = ground_truth - predicted_labels
-rmse = np.sqrt(np.mean(residual_difference ** 2))
-amplitude_range = file_attributes.prop['steerMax'] - file_attributes.prop['steerMin']
+# Steering
+ground_truth_steering = reference_labels[sequence_length:, 0]
+residual_difference_steering = ground_truth_steering - predicted_steering[0]
+rmse_steering = np.sqrt(np.mean(residual_difference_steering ** 2))
+amplitude_range_steering = 200
+
+# Throttle
+ground_truth_throttle = reference_labels[sequence_length:, 1]
+residual_difference_throttle = ground_truth_throttle - predicted_throttle[1]
+rmse_throttle = np.sqrt(np.mean(residual_difference_throttle ** 2))
+amplitude_range_throttle = 100
+
 # Build the plot title
-text_title = f'Test File Name => {test_file}\nMSE (%) => {100 * rmse / amplitude_range:2.1f}'
+text_title = f'Test File Name => {test_file}\n RMSE Steering (%) => ' \
+             f'{100 * rmse_steering / amplitude_range_steering:2.1f}  ' \
+             'RMSE Throttle (%) =>' \
+             f'{100 * rmse_throttle / amplitude_range_throttle:2.1f}'
 
 # Create a plot
 plt.figure(figsize=(12, 8))
-plt.plot(ground_truth, 'g', linewidth=4.0)
-plt.plot(predicted_labels, 'r-')
-plt.ylabel('Normalized Steering Angle')
+plt.plot(ground_truth_steering, 'g', linewidth=4.0)
+plt.plot(predicted_steering, 'r-')
+plt.plot(ground_truth_throttle, 'k', linewidth=4.0)
+plt.plot(predicted_throttle, 'b--')
+plt.ylabel('Normalized Steering Angle and Throttle')
 plt.xlabel('Frame Index')
 plt.grid(True)
-plt.legend(['Ground Truth - Steering', 'Inference - Steering'], loc='best')
+plt.legend(['Ground Truth - Steering',
+            'Inference - Steering',
+            'Ground Truth - Throttle',
+            'Inference - Throttle'], loc='best')
 plt.ylim(-100, 100)
 plt.title(text_title)
-plt.savefig(f'{dnn_path + time.strftime("%y%m%d" + "." + "%H%M%S") + test_file[:-5]}_steering.png')
+plt.savefig(f'{"./" + time.strftime("%y%m%d" + "." + "%H%M%S") + test_file[:-5]}_steering.png')
+plt.show()
