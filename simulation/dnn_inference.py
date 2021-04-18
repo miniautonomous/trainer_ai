@@ -6,6 +6,8 @@ import tensorflow as tf
 from tensorflow.python.client import device_lib
 from utils.data_loader import BatchLoader
 
+USE_TRT = False
+
 """
     File: dnn_inference.py
     
@@ -56,7 +58,7 @@ data_loader = BatchLoader(data_dictionary,
                           'regression')
 
 # Read image and label data from the test file
-image_data, reference_labels, file_attributes = data_loader.read_data_file(test_path + test_file)
+image_data, reference_labels = data_loader.read_data_file(test_path + test_file)
 
 # Number of images and labels
 number_entries = len(image_data)
