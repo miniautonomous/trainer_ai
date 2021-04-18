@@ -2,80 +2,92 @@
   Decription:
     Script to run the a trained Keras.
 """
-import os
 import time
 import numpy as np
+import os
 import matplotlib.pyplot as plt
 import tensorflow as tf
-from h5IO import h5Files
-from tsDSP import tsDSP
+from tensorflow.python.client import device_lib
+from utils.data_loader import BatchLoader
+# from tsDSP import tsDSP
 
-# Set the correct GPU to use
-os.environ["CUDA_VISIBLE_DEVICES"] = '3'
+# GPU identifier
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+print(device_lib.list_local_devices())
+# If multiple CUDA compatible devices are available,
+# you can select an index other than 0
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
-# DNN file
-dnnPath = 'C:\\Users\\fcharett\\docsWork\\projects\\prjFollowTheLeader\\devInfer\\fordIPU\\'
-# dnnFile = '200428.184211_4C_1R_regression.h5'
-dnnFile = 'FordRegression_Keras_IPU_Single_Day_47_84.h5'
-# dnnFile = 'FordRegression_Keras_IPU_All_Days_47_84.h5'
+# DNN File
+dnn_path = './model_files/'
+dnnFile = 'TestModel.h5'
 
-nnModel = tf.keras.models.load_model(dnnPath+dnnFile, custom_objects={"tf":tf})
-nnModel.summary()
+# Test File
+test_path = './data_files/'
+test_file = 'TestData.hdf5'
+
+# Load the model
+nn_model = tf.keras.models.load_model(dnn_path + dnnFile,
+                                      custom_objects={"tf": tf})
+nn_model.summary()
 # First retrieve the model input sizes
-tmpCfg = nnModel.get_config()
-rnnSeqLength = tmpCfg['layers'][0]['config']['batch_input_shape'][1]
-imgHeight = tmpCfg['layers'][0]['config']['batch_input_shape'][2]
-imgWidth = tmpCfg['layers'][0]['config']['batch_input_shape'][3]
-inNumChannels = tmpCfg['layers'][0]['config']['batch_input_shape'][4]
+model_config = nn_model.get_config()
+sequence_length = model_config['layers'][0]['config']['batch_input_shape'][1]
+image_height = model_config['layers'][0]['config']['batch_input_shape'][2]
+image_width = model_config['layers'][0]['config']['batch_input_shape'][3]
+channel_depth = model_config['layers'][0]['config']['batch_input_shape'][4]
 
+# Create a data dictionary to read the file
+data_dictionary = {'image_width': image_width,
+                   'image_height': image_height,
+                   'data_directory': test_path,
+                   'shuffle': False,
+                   'throttle': True,
+                   'train_to_valid': 0.85,
+                   'sequence': True,
+                   'sequence_length': 5,
+                   'sequence_overlap': 2,
+                   'normalize': False}
 
-# Create an io object to process the data file
-io = h5Files() # Create a "h5IO" object
-# "test" file
-testPath = 'C:\\Users\\fcharett\\docsWork\\projects\\prjFollowTheLeader\\devInfer\\'
-testFile = '200423_165823_xCar_numImg02_CW.hdf5'
-print(f'Processing file => {testPath+testFile}')
-# Get current the file info
-io.fileInfo(testPath+testFile)
-# Find the number of frames/images in the current file
-nEntries = len(io.groupList)
-# Initialize the image buffer for the current file
-imageCatalog = np.zeros((nEntries, int(io.fileAtt['imgHeight']), int(io.fileAtt['imgWidth']), 6),
-                        np.uint8)
+# Create the data loader
+data_loader = BatchLoader(data_dictionary,
+                          'regression')
 
-# Read ALL the images in the file and put them in the image buffer
-for j in range(len(io.groupList)):
-  imgTmp = io.h5DataSetImage(io.groupList[j], 'imgLeft')
-  for k in range(1, 2):
-      # If there are multiple images in each frame or group, concatenate them
-    imgTmp = np.concatenate((imgTmp, io.h5DataSetImage(io.groupList[j], 'imgRight')), axis=2)
-  imageCatalog[j] = imgTmp
+# Read image and label data from the test file
+image_data, reference_label = data_loader.read_data_file(test_path + test_file)
+
+# Number of images and labels
+number_entries = len(image_data)
 #=================================== Initialize the ts lists ======================================#
-spRef = tsDSP(None)
+# reference_label = tsDSP(None)
 spY = tsDSP(None)
-# Build the new timeseries names AND Get the current file targets data, i.e. ground
+# Build the new time series names AND Get the current file targets data, i.e. ground
 # truth for regression
-predictNames = ['Predict - steering']
-spRef.appendTs(io.tsFromGroupScalar('steering', testPath+testFile))
-# Create the new prediction timeseries
-spY.new(predictNames)
+prediction_name = ['Predict - steering']
+# Create the new prediction time series
+spY.new(prediction_name)
 #==================================== Perform ALL the inferences ==================================#
 # Need to create a buffer for the sequence
-imgIn = np.zeros((1, rnnSeqLength, int(imgHeight), int(imgWidth), int(inNumChannels)), np.uint8)
+image_in = np.zeros((1,
+                     sequence_length,
+                     int(image_height),
+                     int(image_width),
+                     int(channel_depth)),
+                    np.uint8)
 # Loop around ALL the images in the file building sequence at each images
-for iImg in range(0, len(imageCatalog)-rnnSeqLength):
-  if iImg % 50 == 0:
-    print(f'processing frame => {iImg}')
-  imgIn[0, :, :, :, :] = imageCatalog[iImg:iImg+rnnSeqLength, :, :, :]
-  # Save to the ts
-  spY.addNewDataPoint(nnModel.predict(imgIn)[0][0], 'Predict - steering')
+for image_index in range(0, len(image_data) - sequence_length):
+    if image_index % 50 == 0:
+        print(f'processing frame => {image_index}')
+    image_in[0, :, :, :, :] = image_data[image_index:image_index + sequence_length, :, :, :]
+    # Save to the ts
+    spY.addNewDataPoint(nn_model.predict(image_in)[0][0], 'Predict - steering')
 #============================ Compute AND save the results/plots to file ==========================#
-groundTruth = spRef.getY('steering')[rnnSeqLength:]
+groundTruth = reference_label.getY('steering')[sequence_length:]
 resDiff = groundTruth-spY.getY(f'Predict - steering')
 mse = np.sqrt(np.mean(resDiff**2))
-ampRange = spRef.ts[0].prop["max"]-spRef.ts[0].prop["min"]
+ampRange = reference_label.ts[0].prop["max"] - reference_label.ts[0].prop["min"]
 # Build the plot title
-textTitle = f'Test File Name => {testFile}\nMSE (%) => {100*mse/ampRange:2.1f}'
+textTitle = f'Test File Name => {test_file}\nMSE (%) => {100 * mse / ampRange:2.1f}'
 #---------------------------Create the associated plot file. i.e. png------------------------------#
 plt.figure(figsize=(12, 8))
 plt.plot(groundTruth, 'g', linewidth=4.0)
@@ -83,7 +95,7 @@ plt.plot(spY.getY('Predict - steering'), 'r-')
 plt.ylabel('Normalized Steering Angle')
 plt.xlabel('Frame Index')
 plt.grid(True)
-plt.legend([f'Ground Truth - {spRef.ts[0].prop["name"]}', spY.ts[0].prop['name']], loc='best')
+plt.legend([f'Ground Truth - {reference_label.ts[0].prop["name"]}', spY.ts[0].prop['name']], loc='best')
 plt.ylim(-100, 100)
 plt.title(textTitle)
-plt.savefig(f'{dnnPath+time.strftime("%y%m%d" + "." + "%H%M%S")+testFile[:-5]}_steering.png')
+plt.savefig(f'{dnn_path + time.strftime("%y%m%d" + "." + "%H%M%S") + test_file[:-5]}_steering.png')
