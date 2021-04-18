@@ -155,12 +155,6 @@ class TrainAI(object):
         training_dataset = self.create_dataset(self.training_data[0][0], self.training_data[0][1])
         validation_dataset = self.create_dataset(self.training_data[1][0], self.training_data[1][1])
 
-        # Create an iterator
-        # training_iter = training_dataset.__iter__()
-        # validation_iter = validation_dataset.__iter__()
-        # x_train, y_train = training_iter.get_next()
-        # x_valid, y_valid = validation_iter.get_next()
-
         # Define a loss and metric
         loss, metric = self.define_loss_and_metric()
 
