@@ -3,6 +3,7 @@ import glob
 import h5py
 from sklearn.utils import shuffle
 import string
+import cv2
 
 
 class BatchLoader:
@@ -22,6 +23,10 @@ class BatchLoader:
 
         # Classifier or regression?
         self._mode = mode
+
+        # Are we going to need to do an image resize?
+        # (i.e. raw data is not the same as desired image dims)
+        self.resize = False
 
         # Set data type for labels
         if mode == 'regression':
@@ -103,8 +108,12 @@ class BatchLoader:
 
             # Create an image array
             # TODO: Verify the data type!
-            temp_image = np.zeros((len(group_list), int(file_attributes['imgHeight']),
-                                   int(file_attributes['imgWidth']), 3), np.uint8)
+            temp_image = np.zeros((len(group_list), int(self._data_config['image_height']),
+                                   int(self._data_config['image_width']), 3), np.uint8)
+
+            # Check if we need a resize from actual data to desired
+            if int(file_attributes['imgHeight']) != self._data_config['image_height']:
+                self.resize = True
 
             # Define what type of label is appropriate
             if self._mode == 'regression' and self._data_config['throttle']:
@@ -116,8 +125,13 @@ class BatchLoader:
 
             # Go through the group list and do the actual reading
             for index, item in enumerate(group_list):
-                # Read image
-                temp_image[index, :, :, 0:3] = np.array(hf[item]['image'])
+                # Read image and resize if required
+                if self.resize:
+                    temp_image[index, :, :, 0:3] = cv2.resize(np.array(hf[item]['image']),
+                                                              (self._data_config['image_width'],
+                                                               self._data_config['image_height']))
+                else:
+                    temp_image[index, :, :, 0:3] = np.array(hf[item]['image'])
 
                 # Read label
                 if self._mode == 'regression' and self._data_config['throttle']:

@@ -6,7 +6,7 @@ import tensorflow as tf
 from tensorflow.python.client import device_lib
 from utils.data_loader import BatchLoader
 
-USE_TRT = False
+USE_TRT = True
 
 """
     File: dnn_inference.py
@@ -24,22 +24,34 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 # DNN File
 dnn_path = './model_files/'
-dnn_file = 'StandardRegression.h5'
+if USE_TRT:
+    dnn_file = 'tensorRT_post_convert/'
+
+    # Load the model
+    nn_model = tf.saved_model.load(dnn_path + dnn_file)
+    prediction = nn_model.signatures['serving_default']
+    sequence_length = prediction.inputs[0].shape[1]
+    image_height = prediction.inputs[0].shape[2]
+    image_width =  prediction.inputs[0].shape[3]
+    channel_depth =  prediction.inputs[0].shape[4]
+else:
+    dnn_file = 'StandardRegression.h5'
+
+    # Load the model
+    nn_model = tf.keras.models.load_model(dnn_path + dnn_file,
+                                          custom_objects={"tf": tf})
+    nn_model.summary()
+    # First retrieve the model input sizes
+    model_config = nn_model.get_config()
+    sequence_length = model_config['layers'][0]['config']['batch_input_shape'][1]
+    image_height = model_config['layers'][0]['config']['batch_input_shape'][2]
+    image_width = model_config['layers'][0]['config']['batch_input_shape'][3]
+    channel_depth = model_config['layers'][0]['config']['batch_input_shape'][4]
 
 # Test File
 test_path = './test_files/'
-test_file = '210413_091532_miniCar_.hdf5'
-
-# Load the model
-nn_model = tf.keras.models.load_model(dnn_path + dnn_file,
-                                      custom_objects={"tf": tf})
-nn_model.summary()
-# First retrieve the model input sizes
-model_config = nn_model.get_config()
-sequence_length = model_config['layers'][0]['config']['batch_input_shape'][1]
-image_height = model_config['layers'][0]['config']['batch_input_shape'][2]
-image_width = model_config['layers'][0]['config']['batch_input_shape'][3]
-channel_depth = model_config['layers'][0]['config']['batch_input_shape'][4]
+# test_file = '210418_170656_miniCar_.hdf5'
+test_file = '210418_170829_miniCar_.hdf5'
 
 # Create a data dictionary to read the file
 data_dictionary = {'image_width': image_width,
@@ -79,8 +91,14 @@ for image_index in range(0, len(image_data) - sequence_length):
     if image_index % 50 == 0:
         print(f'processing frame => {image_index}')
     image_in[0, :, :, :, :] = image_data[image_index:image_index + sequence_length, :, :, :]
+
     # Perform inference
-    inference = nn_model.predict(image_in)[0]
+    if USE_TRT:
+        inference = prediction(tf.convert_to_tensor(image_in, dtype=tf.float32))
+        inference = inference['dense'][0].numpy()
+    else:
+        inference = nn_model.predict(image_in)[0]
+
     predicted_steering = np.append(predicted_steering, inference[0])
     predicted_throttle = np.append(predicted_throttle, inference[1])
 
