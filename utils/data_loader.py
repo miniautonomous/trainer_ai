@@ -7,7 +7,7 @@ import cv2
 
 
 class BatchLoader:
-    def __init__(self, data_dictionary: dict, mode: string):
+    def __init__(self, data_dictionary: dict, network_dictionary: dict, mode: string):
         """
             Batch processing utility that reads HDF5 data files and creates
             training and validation data sets that can be accessed at
@@ -16,10 +16,14 @@ class BatchLoader:
         Parameters
         ----------
         data_dictionary: (dict) configuration of the data
+        network_dictionary: (dict) configuration of the network to be trained
         mode: (string) regression or classification data
         """
         # Read the data configuration
         self._data_config = data_dictionary
+
+        # Read the network configuration
+        self._network_config = network_dictionary
 
         # Classifier or regression?
         self._mode = mode
@@ -35,24 +39,24 @@ class BatchLoader:
             self._d_type = np.int32
 
         # Initiate numpy array for training images and training labels based on desired config
-        self.training_images = np.zeros((0, self._data_config['sequence_length'],
-                                         self._data_config['image_height'],
-                                         self._data_config['image_width'],
+        self.training_images = np.zeros((0, self._network_config['sequence_length'],
+                                         self._network_config['image_height'],
+                                         self._network_config['image_width'],
                                          3), dtype=np.float32)
-        self.validation_images = np.zeros((0, self._data_config['sequence_length'],
-                                           self._data_config['image_height'],
-                                           self._data_config['image_width'],
+        self.validation_images = np.zeros((0, self._network_config['sequence_length'],
+                                           self._network_config['image_height'],
+                                           self._network_config['image_width'],
                                            3), dtype=np.float32)
 
-        if self._data_config['sequence'] and self._data_config['throttle']:
-            self.training_labels = np.zeros((0, self._data_config['sequence_length'], 2),
+        if self._network_config['sequence'] and self._network_config['throttle']:
+            self.training_labels = np.zeros((0, self._network_config['sequence_length'], 2),
                                             self._d_type)
-            self.validation_labels = np.zeros((0, self._data_config['sequence_length'], 2),
+            self.validation_labels = np.zeros((0, self._network_config['sequence_length'], 2),
                                               self._d_type)
-        elif self._data_config['sequence'] and not self._data_config['throttle']:
-            self.training_labels = np.zeros((0, self._data_config['sequence_length']),
+        elif self._network_config['sequence'] and not self._network_config['throttle']:
+            self.training_labels = np.zeros((0, self._network_config['sequence_length']),
                                             self._d_type)
-            self.validation_labels = np.zeros((0, self._data_config['sequence_length']),
+            self.validation_labels = np.zeros((0, self._network_config['sequence_length']),
                                               self._d_type)
         else:
             self.training_labels = np.zeros((0,), self._d_type)
@@ -107,18 +111,17 @@ class BatchLoader:
                 group_dataset.append(item[0])
 
             # Create an image array
-            # TODO: Verify the data type!
-            temp_image = np.zeros((len(group_list), int(self._data_config['image_height']),
-                                   int(self._data_config['image_width']), 3), np.uint8)
+            temp_image = np.zeros((len(group_list), int(self._network_config['image_height']),
+                                   int(self._network_config['image_width']), 3), np.uint8)
 
             # Check if we need a resize from actual data to desired
-            if int(file_attributes['imgHeight']) != self._data_config['image_height']:
+            if int(file_attributes['imgHeight']) != self._network_config['image_height']:
                 self.resize = True
 
             # Define what type of label is appropriate
-            if self._mode == 'regression' and self._data_config['throttle']:
+            if self._mode == 'regression' and self._network_config['throttle']:
                 temp_label = np.zeros((len(group_list), 2), np.float32)
-            elif self._mode == 'regression' and not self._data_config['throttle']:
+            elif self._mode == 'regression' and not self._network_config['throttle']:
                 temp_label = np.zeros((len(group_list),), np.float32)
             else:
                 temp_label = np.zeros((len(group_list),), np.uint8)
@@ -128,13 +131,13 @@ class BatchLoader:
                 # Read image and resize if required
                 if self.resize:
                     temp_image[index, :, :, 0:3] = cv2.resize(np.array(hf[item]['image']),
-                                                              (self._data_config['image_width'],
-                                                               self._data_config['image_height']))
+                                                              (self._network_config['image_width'],
+                                                               self._network_config['image_height']))
                 else:
                     temp_image[index, :, :, 0:3] = np.array(hf[item]['image'])
 
                 # Read label
-                if self._mode == 'regression' and self._data_config['throttle']:
+                if self._mode == 'regression' and self._network_config['throttle']:
                     if self._data_config['normalize']:
                         temp_label[index, 0] = self.map_function(int(np.array(hf[item]['steering'])),
                                                                  [int(file_attributes['steerMin']),
@@ -147,7 +150,7 @@ class BatchLoader:
                     else:
                         temp_label[index, 0] = np.array(hf[item]['steering'])
                         temp_label[index, 1] = np.array(hf[item]['throttle'])
-                elif self._mode == 'regression' and not self._data_config['throttle']:
+                elif self._mode == 'regression' and not self._network_config['throttle']:
                     if self._data_config['normalize']:
                         temp_label[index, 0] = self.map_function(hf[item]['steering'],
                                                                  [file_attributes['steerMin'],
@@ -216,7 +219,7 @@ class BatchLoader:
 
             # Create a valid index list for sequences
             valid_starting_indices = list(range(number_of_frames -
-                                                self._data_config['sequence_length']))
+                                                self._network_config['sequence_length']))
 
             """
                 Since we are allowing sequences to have overlaps, we need to make an adjustment
@@ -236,7 +239,7 @@ class BatchLoader:
                 Now we have reused three frames, (32, 33 and 34). We add the parameter, 'sequence_overlap',
                 to define how many frames of overlap are permitted between distinct sequences.
             """
-            sequence_offset = self._data_config['sequence_length'] - self._data_config['sequence_overlap']
+            sequence_offset = self._network_config['sequence_length'] - self._network_config['sequence_overlap']
             valid_starting_indices = valid_starting_indices[::sequence_offset]
             """
                 The above does this:
@@ -263,16 +266,16 @@ class BatchLoader:
             # Training data
             for starting_index in training_indices:
                 training_frames.append(temp_image[starting_index:
-                                                  starting_index+self._data_config['sequence_length']])
+                                                  starting_index+self._network_config['sequence_length']])
                 training_labels.append(temp_label[starting_index:
-                                                  starting_index+self._data_config['sequence_length']])
+                                                  starting_index+self._network_config['sequence_length']])
 
             # Validation data
             for starting_index in validation_indices:
                 validation_frames.append(temp_image[starting_index:
-                                                    starting_index+self._data_config['sequence_length']])
+                                                    starting_index+self._network_config['sequence_length']])
                 validation_labels.append(temp_label[starting_index:
-                                                    starting_index+self._data_config['sequence_length']])
+                                                    starting_index+self._network_config['sequence_length']])
 
             # Finished processing the given file, so concatenate with overall data sets
             self.training_images = np.concatenate((self.training_images, np.asarray(training_frames)), axis=0)

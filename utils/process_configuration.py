@@ -64,24 +64,25 @@ class ConfigurationProcessor:
 
             # Network section
             if section == 'Network':
+                integer_list = ['image_height', 'image_width',
+                                'sequence_length', 'sequence_overlap']
+                boolean_list = ['sequence', 'save_to_trt', 'throttle']
                 for option in self.parser.options(section):
-                    if option == 'save_to_trt':
+                    if option in boolean_list:
                         self.network_dictionary[option] = \
                             self.parser.getboolean(section, option)
+                    elif option in integer_list:
+                        self.network_dictionary[option] = \
+                            self.parser.getint(section, option)
                     else:
                         self.network_dictionary[option] = \
                             self.parser.get(section, option)
 
             # Data section
             if section == 'Data':
-                integer_list = ['image_height', 'image_width',
-                                'sequence_length', 'sequence_overlap']
-                boolean_list = ['shuffle', 'throttle', 'sequence', 'large_data', 'normalize']
+                boolean_list = ['shuffle', 'large_data', 'normalize']
                 for option in self.parser.options(section):
-                    if option in integer_list:
-                        self.data_dictionary[option] = \
-                            self.parser.getint(section, option)
-                    elif option in boolean_list:
+                    if option in boolean_list:
                         self.data_dictionary[option] = \
                             self.parser.getboolean(section, option)
                     elif option == 'train_to_valid':
@@ -99,6 +100,6 @@ class ConfigurationProcessor:
                 self.data_dictionary['train_to_valid'] >= 1.0:
             self.data_dictionary['train_to_valid'] = 0.85
             print('Train to validation ratio being reset to default value of 0.85.')
-        if self.data_dictionary['sequence'] is False:
-            self.data_dictionary['sequence_length'] = 0
-            print('Non-sequence training requested, so sequence length is set to 0.')
+        if self.network_dictionary['sequence'] is False:
+            self.data_dictionary['sequence_length'] = 1
+            print('Non-sequence training requested, so sequence length is set to 1, (i.e. one image).')

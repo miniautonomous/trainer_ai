@@ -15,15 +15,16 @@ save_model: True
 model_name: StandardRegression
 precision: single
 save_to_trt: False
-
-[Data]
 image_height: 47
 image_width: 84
-data_directory: data/*.hdf5
-shuffle: True
-throttle: False
-large_data: False
-train_to_valid: 0.85
 sequence: True
+throttle: False
 sequence_length: 5
 sequence_overlap: 2
+
+[Data]
+data_directory: data/*.hdf5
+shuffle: True
+large_data: False
+train_to_valid: 0.85
+normalize: True

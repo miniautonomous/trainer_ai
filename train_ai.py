@@ -22,11 +22,11 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 class TrainAI(object):
     def __init__(self, input_config: string = None):
         """
-        Trains the models to be deployed to MiniAutonomous!
+            Train a model to be deployed to MiniAutonomous!
 
         Parameters
         ----------
-        input_config: (string) configuration file that defines the training process
+        input_config: (string) configuration file name that defines the training process
 
         """
         self.training_configuration = process_configuration.ConfigurationProcessor(input_config)
@@ -37,14 +37,15 @@ class TrainAI(object):
 
         # Create the data loader
         self.data_loader = BatchLoader(self.training_configuration.data_dictionary,
+                                       self.training_configuration.network_dictionary,
                                        self.model_constructor.mode)
 
-        # Define the image dimensions of the data
-        self.image_height = self.training_configuration.data_dictionary['image_height']
-        self.image_width = self.training_configuration.data_dictionary['image_width']
+        # Define the input tensor image dimensions
+        self.image_height = self.training_configuration.network_dictionary['image_height']
+        self.image_width = self.training_configuration.network_dictionary['image_width']
 
         # Load the data
-        if self.training_configuration.data_dictionary['sequence']:
+        if self.training_configuration.network_dictionary['sequence']:
             self.training_data = self.data_loader.load_sequence_from_hdf5()
         else:
             self.training_data = self.data_loader.load_from_hdf5()
@@ -87,7 +88,7 @@ class TrainAI(object):
 
     def define_loss_and_metric(self):
         """
-            Defines the loss (and metric( according to the configuration scripts
+            Defines the loss (and metric) according to the configuration scripts
 
         Returns
         -------
@@ -133,8 +134,8 @@ class TrainAI(object):
         """
 
         # Define the input tensor dimension based on the data
-        if self.training_configuration.data_dictionary['sequence']:
-            sequence_length = self.training_configuration.data_dictionary['sequence_length']
+        if self.training_configuration.network_dictionary['sequence']:
+            sequence_length = self.training_configuration.network_dictionary['sequence_length']
             input_tensor = keras.Input(shape=(sequence_length,
                                               self.image_height,
                                               self.image_width, 3))

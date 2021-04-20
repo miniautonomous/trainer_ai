@@ -7,6 +7,7 @@ from tensorflow.python.client import device_lib
 from utils.data_loader import BatchLoader
 
 USE_TRT = True
+SAVE_FIG = True
 
 """
     File: dnn_inference.py
@@ -53,20 +54,21 @@ test_path = './test_files/'
 # test_file = '210418_170656_miniCar_.hdf5'
 test_file = '210418_170829_miniCar_.hdf5'
 
-# Create a data dictionary to read the file
-data_dictionary = {'image_width': image_width,
-                   'image_height': image_height,
-                   'data_directory': test_path,
+# Create config to load data
+network_dictionary = {'image_width': image_width,
+                      'image_height': image_height,
+                      'throttle': True,
+                      'sequence': True,
+                      'sequence_length': 5,
+                      'sequence_overlap': 2}
+data_dictionary = {'data_directory': test_path,
                    'shuffle': False,
-                   'throttle': True,
                    'train_to_valid': 0.85,
-                   'sequence': True,
-                   'sequence_length': 5,
-                   'sequence_overlap': 2,
                    'normalize': True}
 
 # Create the data loader
 data_loader = BatchLoader(data_dictionary,
+                          network_dictionary,
                           'regression')
 
 # Read image and label data from the test file
@@ -138,5 +140,6 @@ plt.legend(['Ground Truth - Steering',
             'Inference - Throttle'], loc='best', fontsize=14)
 plt.ylim(-100, 100)
 plt.title(text_title, fontsize=18)
-plt.savefig(f'{"./" + time.strftime("%y%m%d" + "." + "%H%M%S") + test_file[:-5]}_steering.png')
+if SAVE_FIG:
+    plt.savefig(f'{"./" + time.strftime("%y%m%d" + "." + "%H%M%S") + test_file[:-5]}_steering.png')
 plt.show()

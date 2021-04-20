@@ -39,25 +39,25 @@ class StandardRegression(Model):
 
         # Entry convolutional block
         x = derived_layers.standard_convolution_block_sequential(x, kernel_size=(7, 7),
-                                                                 filters=32, dtype=self._dtype)
+                                                                 filters=20, dtype=self._dtype)
 
         # 2nd convolutional block
         x = derived_layers.standard_convolution_block_sequential(x, kernel_size=(7, 7),
-                                                                 filters=32, dtype=self._dtype)
+                                                                 filters=20, dtype=self._dtype)
 
         # 3rd convolutional block
         x = derived_layers.standard_convolution_block_sequential(x, kernel_size=(5, 5),
-                                                                 filters=128, dtype=self._dtype)
+                                                                 filters=40, dtype=self._dtype)
 
         # 4th convolutional block
         x = derived_layers.standard_convolution_block_sequential(x, kernel_size=(3, 3),
-                                                                 filters=128, dtype=self._dtype)
+                                                                 filters=40, dtype=self._dtype)
 
         # Flatten the output
         x = layers.TimeDistributed(layers.Flatten())(x)
 
         # Feed it to an LSTM
-        x = layers.LSTM(units=40, activation='relu',
+        x = layers.LSTM(units=20, activation='relu',
                         recurrent_activation='hard_sigmoid',
                         use_bias=True,
                         kernel_initializer='glorot_uniform',

@@ -4,7 +4,7 @@ loss: MSE
 decay_type: static
 starting_learning_rate: 0.0001
 decay_steps: 10000
-epochs: 50
+epochs: 60
 batch_size: 1
 plot_network: True
 plot_curve: True
@@ -14,17 +14,17 @@ save_model: True
 [Network]
 model_name: StandardRegression
 precision: single
-save_to_trt: False
-
-[Data]
-image_width: 84
-image_height: 47
-data_directory: data/*.hdf5
-shuffle: True
-throttle: True
-large_data: False
-train_to_valid: 0.85
+save_to_trt: True
+image_width: 80
+image_height: 60
 sequence: True
+throttle: True
 sequence_length: 5
 sequence_overlap: 2
+
+[Data]
+data_directory: data/kitchen_loop/*.hdf5
+shuffle: True
+large_data: False
+train_to_valid: 0.85
 normalize: True
