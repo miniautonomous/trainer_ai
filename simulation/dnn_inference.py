@@ -5,9 +5,10 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 from tensorflow.python.client import device_lib
 from utils.data_loader import BatchLoader
+import glob
 
-USE_TRT = True
-SAVE_FIG = True
+USE_TRT = False
+SAVE_FIG = False
 
 """
     File: dnn_inference.py
@@ -36,7 +37,7 @@ if USE_TRT:
     image_width =  prediction.inputs[0].shape[3]
     channel_depth =  prediction.inputs[0].shape[4]
 else:
-    dnn_file = 'StandardRegression.h5'
+    dnn_file = 'GarageLoopModel.h5'
 
     # Load the model
     nn_model = tf.keras.models.load_model(dnn_path + dnn_file,
@@ -49,10 +50,10 @@ else:
     image_width = model_config['layers'][0]['config']['batch_input_shape'][3]
     channel_depth = model_config['layers'][0]['config']['batch_input_shape'][4]
 
-# Test File
+# Test all files in a directory
 test_path = './test_files/'
-# test_file = '210418_170656_miniCar_.hdf5'
-test_file = '210418_170829_miniCar_.hdf5'
+test_files = glob.glob(test_path+'*.hdf5')
+print(f'Number of test files: '+str(len(test_files)))
 
 # Create config to load data
 network_dictionary = {'image_width': image_width,
@@ -70,76 +71,76 @@ data_dictionary = {'data_directory': test_path,
 data_loader = BatchLoader(data_dictionary,
                           network_dictionary,
                           'regression')
+for test_file in test_files:
+    # Read image and label data from the test file
+    image_data, reference_labels = data_loader.read_data_file(test_file)
 
-# Read image and label data from the test file
-image_data, reference_labels = data_loader.read_data_file(test_path + test_file)
+    # Number of images and labels
+    number_entries = len(image_data)
 
-# Number of images and labels
-number_entries = len(image_data)
+    # Predicted label array
+    predicted_steering = np.empty([0])
+    predicted_throttle = np.empty([0])
 
-# Predicted label array
-predicted_steering = np.empty([0])
-predicted_throttle = np.empty([0])
+    # Need to create a buffer for the sequence
+    image_in = np.zeros((1,
+                         sequence_length,
+                         int(image_height),
+                         int(image_width),
+                         int(channel_depth)),
+                        np.uint8)
+    # Loop around ALL the images in the file building sequence at each images
+    for image_index in range(0, len(image_data) - sequence_length):
+        if image_index % 50 == 0:
+            print(f'processing frame => {image_index}')
+        image_in[0, :, :, :, :] = image_data[image_index:image_index + sequence_length, :, :, :]
 
-# Need to create a buffer for the sequence
-image_in = np.zeros((1,
-                     sequence_length,
-                     int(image_height),
-                     int(image_width),
-                     int(channel_depth)),
-                    np.uint8)
-# Loop around ALL the images in the file building sequence at each images
-for image_index in range(0, len(image_data) - sequence_length):
-    if image_index % 50 == 0:
-        print(f'processing frame => {image_index}')
-    image_in[0, :, :, :, :] = image_data[image_index:image_index + sequence_length, :, :, :]
+        # Perform inference
+        if USE_TRT:
+            inference = prediction(tf.convert_to_tensor(image_in, dtype=tf.float32))
+            inference = inference['dense'][0].numpy()
+        else:
+            inference = nn_model.predict(image_in)[0]
 
-    # Perform inference
-    if USE_TRT:
-        inference = prediction(tf.convert_to_tensor(image_in, dtype=tf.float32))
-        inference = inference['dense'][0].numpy()
-    else:
-        inference = nn_model.predict(image_in)[0]
+        predicted_steering = np.append(predicted_steering, inference[0])
+        predicted_throttle = np.append(predicted_throttle, inference[1])
 
-    predicted_steering = np.append(predicted_steering, inference[0])
-    predicted_throttle = np.append(predicted_throttle, inference[1])
+    # Compute RMSE and save the results
+    # Steering
+    ground_truth_steering = reference_labels[sequence_length:, 0]
+    residual_difference_steering = ground_truth_steering - predicted_steering[0]
+    rmse_steering = np.sqrt(np.mean(residual_difference_steering ** 2))
+    amplitude_range_steering = 200
 
-# Compute RMSE and save the results
-# Steering
-ground_truth_steering = reference_labels[sequence_length:, 0]
-residual_difference_steering = ground_truth_steering - predicted_steering[0]
-rmse_steering = np.sqrt(np.mean(residual_difference_steering ** 2))
-amplitude_range_steering = 200
+    # Throttle
+    ground_truth_throttle = reference_labels[sequence_length:, 1]
+    residual_difference_throttle = ground_truth_throttle - predicted_throttle[1]
+    rmse_throttle = np.sqrt(np.mean(residual_difference_throttle ** 2))
+    amplitude_range_throttle = 100
 
-# Throttle
-ground_truth_throttle = reference_labels[sequence_length:, 1]
-residual_difference_throttle = ground_truth_throttle - predicted_throttle[1]
-rmse_throttle = np.sqrt(np.mean(residual_difference_throttle ** 2))
-amplitude_range_throttle = 100
+    # Build the plot title
+    text_title = f'Test File Name => {test_file}\n RMSE Steering (%) => ' \
+                 f'{100 * rmse_steering / amplitude_range_steering:2.1f}  ' \
+                 'RMSE Throttle (%) =>' \
+                 f'{100 * rmse_throttle / amplitude_range_throttle:2.1f}'
 
-# Build the plot title
-text_title = f'Test File Name => {test_file}\n RMSE Steering (%) => ' \
-             f'{100 * rmse_steering / amplitude_range_steering:2.1f}  ' \
-             'RMSE Throttle (%) =>' \
-             f'{100 * rmse_throttle / amplitude_range_throttle:2.1f}'
-
-# Create a plot
-plt.figure(figsize=(12, 8))
-plt.plot(ground_truth_steering, 'g', linewidth=4.0)
-plt.plot(predicted_steering, 'r-')
-plt.plot(ground_truth_throttle, 'k', linewidth=4.0)
-plt.plot(predicted_throttle, 'b--')
-plt.ylabel('Normalized Steering Angle and Throttle', fontsize=16)
-plt.xlabel('Frame Index', fontsize=16)
-plt.grid(True)
-plt.xticks(fontsize=14)
-plt.yticks(fontsize=14)
-plt.legend(['Ground Truth - Steering',
-            'Inference - Steering',
-            'Ground Truth - Throttle',
-            'Inference - Throttle'], loc='best', fontsize=14)
-plt.ylim(-100, 100)
-plt.title(text_title, fontsize=18)
-if SAVE_FIG:
-    plt.savefig(f'{"./" + time.strftime("%y%m%d" + "." + "%H%M%S") + test_file[:-5]}_steering.png')
-plt.show()
+    # Create a plot
+    plt.figure(figsize=(12, 8))
+    plt.plot(ground_truth_steering, 'g', linewidth=4.0)
+    plt.plot(predicted_steering, 'r-')
+    plt.plot(ground_truth_throttle, 'k', linewidth=4.0)
+    plt.plot(predicted_throttle, 'b--')
+    plt.ylabel('Normalized Steering Angle and Throttle', fontsize=16)
+    plt.xlabel('Frame Index', fontsize=16)
+    plt.grid(True)
+    plt.xticks(fontsize=14)
+    plt.yticks(fontsize=14)
+    plt.legend(['Ground Truth - Steering',
+                'Inference - Steering',
+                'Ground Truth - Throttle',
+                'Inference - Throttle'], loc='best', fontsize=14)
+    plt.ylim(-100, 100)
+    plt.title(text_title, fontsize=18)
+    if SAVE_FIG:
+        plt.savefig(f'{"./" + time.strftime("%y%m%d" + "." + "%H%M%S") + test_file}_simulation.png')
+    plt.show()
