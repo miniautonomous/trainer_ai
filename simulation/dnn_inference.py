@@ -7,8 +7,8 @@ from tensorflow.python.client import device_lib
 from utils.data_loader import BatchLoader
 import glob
 
-USE_TRT = False
-SAVE_FIG = False
+USE_TRT = True
+SAVE_FIG = True
 
 """
     File: dnn_inference.py
@@ -142,5 +142,5 @@ for test_file in test_files:
     plt.ylim(-100, 100)
     plt.title(text_title, fontsize=18)
     if SAVE_FIG:
-        plt.savefig(f'{"./" + time.strftime("%y%m%d" + "." + "%H%M%S") + test_file}_simulation.png')
+        plt.savefig(f'{test_file}_simulation.png')
     plt.show()
