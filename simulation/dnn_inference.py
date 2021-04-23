@@ -27,7 +27,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 # DNN File
 dnn_path = './model_files/'
 if USE_TRT:
-    dnn_file = 'tensorRT_post_convert/'
+    dnn_file = 'garage_model_grouped_conv/'
 
     # Load the model
     nn_model = tf.saved_model.load(dnn_path + dnn_file)

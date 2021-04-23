@@ -45,15 +45,20 @@ class GarageLoopModel(Model):
         x = derived_layers.standard_convolution_block_sequential(x, kernel_size=(5, 5),
                                                                  filters=30, dtype=self._dtype)
 
-        # 3rd convolutional block
-        x = derived_layers.standard_convolution_block_sequential(x, kernel_size=(3, 3),
-                                                                 filters=60, dtype=self._dtype)
+        # 3rd grouped convolutional block
+        x = derived_layers.grouped_convolution_block_sequential(x,
+                                                                cardinality=6,
+                                                                kernel_size=(3, 3),
+                                                                channels_in=30,
+                                                                batch_norm=True,
+                                                                dtype=self._dtype)
 
         # Flatten the output
         x = layers.TimeDistributed(layers.Flatten())(x)
 
         # Feed it to an LSTM
-        x = layers.LSTM(units=20, activation='relu',
+        x = layers.LSTM(units=30,
+                        activation='relu',
                         recurrent_activation='hard_sigmoid',
                         use_bias=True,
                         kernel_initializer='glorot_uniform',
