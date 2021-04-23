@@ -7,7 +7,7 @@ from tensorflow.python.client import device_lib
 from utils.data_loader import BatchLoader
 import glob
 
-USE_TRT = True
+USE_TRT = False
 SAVE_FIG = True
 
 """
@@ -27,7 +27,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 # DNN File
 dnn_path = './model_files/'
 if USE_TRT:
-    dnn_file = 'garage_model_grouped_conv/'
+    dnn_file = 'garage_model_grouped_conv_v2/'
 
     # Load the model
     nn_model = tf.saved_model.load(dnn_path + dnn_file)
@@ -142,5 +142,8 @@ for test_file in test_files:
     plt.ylim(-100, 100)
     plt.title(text_title, fontsize=18)
     if SAVE_FIG:
-        plt.savefig(f'{test_file}_simulation.png')
+        if USE_TRT:
+            plt.savefig(dnn_path+dnn_file+f'{test_file[13:]}_simulation.png')
+        else:
+            plt.savefig(dnn_path+f'{test_file[13:]}_simulation.png')
     plt.show()
