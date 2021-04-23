@@ -152,7 +152,7 @@ def grouped_convolution_block_sequential(x: tf.Tensor,
     grouped_convs = []
     grouped_channels = channels_in // cardinality
     for index in range(cardinality):
-        input_channels = Lambda(lambda z: z[:, :, :, index * grouped_channels:(index + 1) * grouped_channels])(x)
+        input_channels = Lambda(lambda z: z[:, :, :, :, index * grouped_channels:(index + 1) * grouped_channels])(x)
         group_output = layers.TimeDistributed(layers.Conv2D(kernel_size=kernel_size,
                                               filters=grouped_channels,
                                               padding='SAME',
