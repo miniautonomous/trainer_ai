@@ -7,7 +7,7 @@ from tensorflow.python.client import device_lib
 from utils.data_loader import BatchLoader
 import glob
 
-USE_TRT = False
+USE_TRT = True
 SAVE_FIG = True
 
 """
@@ -27,15 +27,15 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 # DNN File
 dnn_path = './model_files/'
 if USE_TRT:
-    dnn_file = 'garage_model_grouped_conv_v2/'
+    dnn_file = 'tensorRT_post_convert/'
 
     # Load the model
     nn_model = tf.saved_model.load(dnn_path + dnn_file)
     prediction = nn_model.signatures['serving_default']
     sequence_length = prediction.inputs[0].shape[1]
     image_height = prediction.inputs[0].shape[2]
-    image_width =  prediction.inputs[0].shape[3]
-    channel_depth =  prediction.inputs[0].shape[4]
+    image_width = prediction.inputs[0].shape[3]
+    channel_depth = prediction.inputs[0].shape[4]
 else:
     dnn_file = 'GarageLoopModel.h5'
 
@@ -102,8 +102,8 @@ for test_file in test_files:
         else:
             inference = nn_model.predict(image_in)[0]
 
-        predicted_steering = np.append(predicted_steering, inference[0])
-        predicted_throttle = np.append(predicted_throttle, inference[1])
+        predicted_steering = np.append(predicted_steering, inference[-1][0])
+        predicted_throttle = np.append(predicted_throttle, inference[-1][1])
 
     # Compute RMSE and save the results
     # Steering
