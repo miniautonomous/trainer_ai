@@ -39,28 +39,41 @@ class BatchLoader:
             self._d_type = np.int32
 
         # Initiate numpy array for training images and training labels based on desired config
-        self.training_images = np.zeros((0, self._network_config['sequence_length'],
-                                         self._network_config['image_height'],
-                                         self._network_config['image_width'],
-                                         3), dtype=np.float32)
-        self.validation_images = np.zeros((0, self._network_config['sequence_length'],
-                                           self._network_config['image_height'],
-                                           self._network_config['image_width'],
-                                           3), dtype=np.float32)
-
-        if self._network_config['sequence'] and self._network_config['throttle']:
-            self.training_labels = np.zeros((0, self._network_config['sequence_length'], 2),
-                                            self._d_type)
-            self.validation_labels = np.zeros((0, self._network_config['sequence_length'], 2),
-                                              self._d_type)
-        elif self._network_config['sequence'] and not self._network_config['throttle']:
-            self.training_labels = np.zeros((0, self._network_config['sequence_length']),
-                                            self._d_type)
-            self.validation_labels = np.zeros((0, self._network_config['sequence_length']),
-                                              self._d_type)
+        if self._network_config['sequence']:
+            self.training_images = np.zeros((0, self._network_config['sequence_length'],
+                                             self._network_config['image_height'],
+                                             self._network_config['image_width'],
+                                             3), dtype=np.float32)
+            self.validation_images = np.zeros((0, self._network_config['sequence_length'],
+                                               self._network_config['image_height'],
+                                               self._network_config['image_width'],
+                                               3), dtype=np.float32)
+            if self._network_config['throttle']:
+                self.training_labels = np.zeros((0, self._network_config['sequence_length'], 2),
+                                                self._d_type)
+                self.validation_labels = np.zeros((0, self._network_config['sequence_length'], 2),
+                                                  self._d_type)
+            else:
+                self.training_labels = np.zeros((0, self._network_config['sequence_length']),
+                                                self._d_type)
+                self.validation_labels = np.zeros((0, self._network_config['sequence_length']),
+                                                  self._d_type)
         else:
-            self.training_labels = np.zeros((0,), self._d_type)
-            self.validation_labels = np.zeros((0,), self._d_type)
+            # Initiate numpy array for training images and training labels based on desired config
+            self.training_images = np.zeros((0,
+                                             self._network_config['image_height'],
+                                             self._network_config['image_width'],
+                                             3), dtype=np.float32)
+            self.validation_images = np.zeros((0,
+                                               self._network_config['image_height'],
+                                               self._network_config['image_width'],
+                                               3), dtype=np.float32)
+            if self._network_config['throttle']:
+                self.training_labels = np.zeros((0, 2), self._d_type)
+                self.validation_labels = np.zeros((0, 2), self._d_type)
+            else:
+                self.training_labels = np.zeros((0,), self._d_type)
+                self.validation_labels = np.zeros((0,), self._d_type)
 
         # Create a list of all the HDF5 in the data directory
         self._files = glob.glob(self._data_config['data_directory'])

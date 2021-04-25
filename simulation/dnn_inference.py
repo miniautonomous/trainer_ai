@@ -27,17 +27,25 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 # DNN File
 dnn_path = './model_files/'
 if USE_TRT:
-    dnn_file = 'GarageModel/'
+    dnn_file = 'stateless_tensor_rt/'
 
     # Load the model
     nn_model = tf.saved_model.load(dnn_path + dnn_file)
     prediction = nn_model.signatures['serving_default']
-    sequence_length = prediction.inputs[0].shape[1]
-    image_height = prediction.inputs[0].shape[2]
-    image_width = prediction.inputs[0].shape[3]
-    channel_depth = prediction.inputs[0].shape[4]
+    if len(prediction.inputs[0].shape) == 5:
+        has_sequence = True
+        sequence_length = prediction.inputs[0].shape[1]
+        image_height = prediction.inputs[0].shape[2]
+        image_width = prediction.inputs[0].shape[3]
+        channel_depth = prediction.inputs[0].shape[4]
+    else:
+        has_sequence = False
+        sequence_length = 1
+        image_height = prediction.inputs[0].shape[1]
+        image_width = prediction.inputs[0].shape[2]
+        channel_depth = prediction.inputs[0].shape[3]
 else:
-    dnn_file = 'GarageLoopModel_all_data.h5'
+    dnn_file = 'StatelessRegression.h5'
 
     # Load the model
     nn_model = tf.keras.models.load_model(dnn_path + dnn_file,
@@ -45,10 +53,20 @@ else:
     nn_model.summary()
     # First retrieve the model input sizes
     model_config = nn_model.get_config()
-    sequence_length = model_config['layers'][0]['config']['batch_input_shape'][1]
-    image_height = model_config['layers'][0]['config']['batch_input_shape'][2]
-    image_width = model_config['layers'][0]['config']['batch_input_shape'][3]
-    channel_depth = model_config['layers'][0]['config']['batch_input_shape'][4]
+    # We have a model with state memory (i.e. contains an LSTM, GRU, etc.)
+    if len(model_config['layers'][0]['config']['batch_input_shape']) == 5:
+        has_sequence = True
+        sequence_length = model_config['layers'][0]['config']['batch_input_shape'][1]
+        image_height = model_config['layers'][0]['config']['batch_input_shape'][2]
+        image_width = model_config['layers'][0]['config']['batch_input_shape'][3]
+        channel_depth = model_config['layers'][0]['config']['batch_input_shape'][4]
+    else:
+        has_sequence = False
+        sequence_length = 1
+        image_height = model_config['layers'][0]['config']['batch_input_shape'][1]
+        image_width = model_config['layers'][0]['config']['batch_input_shape'][2]
+        channel_depth = model_config['layers'][0]['config']['batch_input_shape'][3]
+
 
 # Test all files in a directory
 test_path = './test_files/'
@@ -59,8 +77,8 @@ print(f'Number of test files: '+str(len(test_files)))
 network_dictionary = {'image_width': image_width,
                       'image_height': image_height,
                       'throttle': True,
-                      'sequence': True,
-                      'sequence_length': 5,
+                      'sequence': has_sequence,
+                      'sequence_length': sequence_length,
                       'sequence_overlap': 2}
 data_dictionary = {'data_directory': test_path,
                    'shuffle': False,
@@ -83,17 +101,27 @@ for test_file in test_files:
     predicted_throttle = np.empty([0])
 
     # Need to create a buffer for the sequence
-    image_in = np.zeros((1,
-                         sequence_length,
-                         int(image_height),
-                         int(image_width),
-                         int(channel_depth)),
-                        np.uint8)
+    if has_sequence:
+        image_in = np.zeros((1,
+                             sequence_length,
+                             int(image_height),
+                             int(image_width),
+                             int(channel_depth)),
+                            np.uint8)
+    else:
+        image_in = np.zeros((1,
+                             int(image_height),
+                             int(image_width),
+                             int(channel_depth)),
+                            np.uint8)
     # Loop around ALL the images in the file building sequence at each images
     for image_index in range(0, len(image_data) - sequence_length):
         if image_index % 50 == 0:
             print(f'processing frame => {image_index}')
-        image_in[0, :, :, :, :] = image_data[image_index:image_index + sequence_length, :, :, :]
+        if has_sequence:
+            image_in[0, :, :, :, :] = image_data[image_index:image_index + sequence_length, :, :, :]
+        else:
+            image_in[0, :, :, :] = image_data[image_index, :, :, :]
 
         # Perform inference
         if USE_TRT:
@@ -102,8 +130,12 @@ for test_file in test_files:
         else:
             inference = nn_model.predict(image_in)[0]
 
-        predicted_steering = np.append(predicted_steering, inference[-1][0])
-        predicted_throttle = np.append(predicted_throttle, inference[-1][1])
+        if has_sequence:
+            predicted_steering = np.append(predicted_steering, inference[-1][0])
+            predicted_throttle = np.append(predicted_throttle, inference[-1][1])
+        else:
+            predicted_steering = np.append(predicted_steering, inference[0])
+            predicted_throttle = np.append(predicted_throttle, inference[1])
 
     # Compute RMSE and save the results
     # Steering

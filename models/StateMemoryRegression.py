@@ -2,10 +2,10 @@ import tensorflow as tf
 import tensorflow.keras as keras
 import tensorflow.keras.layers as layers
 from .base_model import Model
-from layers import derived_layers
+from custom_layers import derived_layers
 
 
-class StandardRegression(Model):
+class StateMemoryRegression(Model):
     def __init__(self, network_dictionary: dict):
         """
             The basic regression model used as a test bed for model construction.
@@ -14,7 +14,7 @@ class StandardRegression(Model):
         ----------
         network_dictionary: (dict) network configuration dictionary
         """
-        super(StandardRegression, self).__init__(network_dictionary=network_dictionary)
+        super(StateMemoryRegression, self).__init__(network_dictionary=network_dictionary)
 
         # Set the mode of the model: classifier or regression
         self.mode = 'regression'

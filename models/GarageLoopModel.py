@@ -2,7 +2,7 @@ import tensorflow as tf
 import tensorflow.keras as keras
 import tensorflow.keras.layers as layers
 from .base_model import Model
-from layers import derived_layers
+from custom_layers import derived_layers
 
 
 class GarageLoopModel(Model):
@@ -61,7 +61,7 @@ class GarageLoopModel(Model):
         x = layers.TimeDistributed(layers.Flatten())(x)
 
         # Feed it to an LSTM
-        # x = layers.LSTM(units=20,
+        # x = custom_layers.LSTM(units=20,
         #                 activation='relu',
         #                 recurrent_activation='hard_sigmoid',
         #                 use_bias=True,

@@ -5,19 +5,19 @@ decay_type: static
 starting_learning_rate: 0.0001
 decay_steps: 10000
 epochs: 100
-batch_size: 8
+batch_size: 16
 plot_network: True
 plot_curve: True
 save_curve: True
 save_model: True
 
 [Network]
-model_name: StandardRegression
+model_name: StatelessRegression
 precision: single
 save_to_trt: True
 image_width: 80
 image_height: 60
-sequence: True
+sequence: False
 throttle: True
 sequence_length: 5
 sequence_overlap: 2
@@ -28,4 +28,3 @@ shuffle: True
 large_data: False
 train_to_valid: 0.8
 normalize: True
-

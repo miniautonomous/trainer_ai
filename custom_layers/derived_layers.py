@@ -48,7 +48,7 @@ def standard_convolution_block_sequential(x: tf.Tensor,
                                           dtype: tf.dtypes = tf.float32) -> tf.Tensor:
     """
         Sister method to the above, but with the sequential 'TimeDistributed' encapsulation that
-        permits for the direct incorporation of RNN/LSTM layers.
+        permits for the direct incorporation of RNN/LSTM custom_layers.
 
     Parameters
     ----------
