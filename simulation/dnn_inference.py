@@ -27,7 +27,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 # DNN File
 dnn_path = './model_files/'
 if USE_TRT:
-    dnn_file = 'tensorRT_post_convert/'
+    dnn_file = 'GarageModel/'
 
     # Load the model
     nn_model = tf.saved_model.load(dnn_path + dnn_file)
@@ -37,7 +37,7 @@ if USE_TRT:
     image_width = prediction.inputs[0].shape[3]
     channel_depth = prediction.inputs[0].shape[4]
 else:
-    dnn_file = 'GarageLoopModel.h5'
+    dnn_file = 'GarageLoopModel_all_data.h5'
 
     # Load the model
     nn_model = tf.keras.models.load_model(dnn_path + dnn_file,

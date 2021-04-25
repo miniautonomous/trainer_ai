@@ -61,7 +61,7 @@ class StandardRegression(Model):
                         recurrent_activation='hard_sigmoid',
                         use_bias=True,
                         kernel_initializer='glorot_uniform',
-                        return_sequences=False)(x)
+                        return_sequences=True)(x)
 
         # Output node
         x = layers.Dense(units=2, activation='linear')(x)
