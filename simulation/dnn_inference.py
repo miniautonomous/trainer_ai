@@ -67,7 +67,6 @@ else:
         image_width = model_config['layers'][0]['config']['batch_input_shape'][2]
         channel_depth = model_config['layers'][0]['config']['batch_input_shape'][3]
 
-
 # Test all files in a directory
 test_path = './test_files/'
 test_files = glob.glob(test_path+'*.hdf5')
