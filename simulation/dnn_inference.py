@@ -27,7 +27,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 # DNN File
 dnn_path = './model_files/'
 if USE_TRT:
-    dnn_file = 'stateless_tensor_rt/'
+    dnn_file = 'garage_stateless_bs16_epochs_100/'
 
     # Load the model
     nn_model = tf.saved_model.load(dnn_path + dnn_file)
@@ -45,7 +45,7 @@ if USE_TRT:
         image_width = prediction.inputs[0].shape[2]
         channel_depth = prediction.inputs[0].shape[3]
 else:
-    dnn_file = 'StatelessRegression.h5'
+    dnn_file = 'GarageLoopModel_bs16.h5'
 
     # Load the model
     nn_model = tf.keras.models.load_model(dnn_path + dnn_file,

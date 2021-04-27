@@ -38,22 +38,22 @@ class StatelessRegression(Model):
         x = layers.BatchNormalization()(inputs)
 
         # Entry convolutional block
-        x = derived_layers.standard_convolution_block(x, kernel_size=(7, 7), filters=32, dtype=self._dtype)
+        x = derived_layers.standard_convolution_block(x, kernel_size=(7, 7), filters=16, dtype=self._dtype)
 
         # 2nd convolution block
-        x = derived_layers.standard_convolution_block(x, kernel_size=(7, 7), filters=32, dtype=self._dtype)
+        x = derived_layers.standard_convolution_block(x, kernel_size=(7, 7), filters=16, dtype=self._dtype)
 
         # 3rd convolution block
-        x = derived_layers.standard_convolution_block(x, kernel_size=(5, 5), filters=128, dtype=self._dtype)
+        x = derived_layers.standard_convolution_block(x, kernel_size=(5, 5), filters=64, dtype=self._dtype)
 
         # 4th convolution block
-        x = derived_layers.standard_convolution_block(x, kernel_size=(3, 3), filters=128, dtype=self._dtype)
+        x = derived_layers.standard_convolution_block(x, kernel_size=(3, 3), filters=64, dtype=self._dtype)
 
         # Flatten the output
         x = layers.Flatten()(x)
 
         # Fully-connected layer
-        x = layers.Dense(units=100,
+        x = layers.Dense(units=60,
                          activation='relu',
                          kernel_initializer=tf.initializers.glorot_normal(),
                          name='dense_large')(x)
