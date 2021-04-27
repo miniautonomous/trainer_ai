@@ -60,14 +60,6 @@ class GarageLoopModel(Model):
         # Flatten the output
         x = layers.TimeDistributed(layers.Flatten())(x)
 
-        # Feed it to an LSTM
-        # x = custom_layers.LSTM(units=20,
-        #                 activation='relu',
-        #                 recurrent_activation='hard_sigmoid',
-        #                 use_bias=True,
-        #                 kernel_initializer='glorot_uniform',
-        #                 return_sequences=True)(x)
-
         # Feed it to a GRU
         x = layers.GRU(units=20,
                        activation='relu',
