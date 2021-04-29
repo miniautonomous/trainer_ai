@@ -185,8 +185,10 @@ class TrainAI(object):
         if self.training_configuration.training_dictionary['save_model']:
             if self.training_configuration.network_dictionary['save_to_trt']:
                 # Convert the model to an TensorRT model and then save it
-                input_saved_model_dir = 'tensorRT_prior_to_save'
-                converted_model_path = 'tensorRT_post_convert'
+                input_saved_model_dir = self.training_configuration.network_dictionary['model_name'] + \
+                                        '_tensorRT_prior_to_save'
+                converted_model_path = self.training_configuration.network_dictionary['model_name'] + \
+                    '_tensorRT_post_convert'
                 keras.models.save_model(keras_model, input_saved_model_dir)
 
                 keras.backend.clear_session()
