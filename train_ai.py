@@ -150,7 +150,8 @@ class TrainAI(object):
 
         # Plot the graph
         if self.training_configuration.training_dictionary['plot_network']:
-            keras.utils.plot_model(keras_model, "model_to_train.png", show_shapes=True)
+            keras.utils.plot_model(keras_model, self.training_configuration.network_dictionary['model_name'] +
+                                   "model_to_train.png", show_shapes=True)
 
         # Create a dataset
         training_dataset = self.create_dataset(self.training_data[0][0], self.training_data[0][1])
@@ -179,7 +180,10 @@ class TrainAI(object):
         # Plot the results
         history_keys = list(history.history.keys())
         if self.training_configuration.training_dictionary['plot_curve']:
-            plot_results(history, history_keys, self.training_configuration.training_dictionary)
+            plot_results(self.training_configuration.network_dictionary['model_name'],
+                         history,
+                         history_keys,
+                         self.training_configuration.training_dictionary)
 
         # Save model
         if self.training_configuration.training_dictionary['save_model']:

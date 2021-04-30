@@ -1,12 +1,13 @@
 import matplotlib.pyplot as plt
 
 
-def plot_results(history, history_keys, training_dictionary):
+def plot_results(model_name: str, history, history_keys: list, training_dictionary:dict):
     """
         Plot the results of a simulation.
 
     Parameters
     ----------
+    model_name: (str) model name
     history: (tf history) result of a Keras model fit
     history_keys: (list) list of losses and metrics related to the triaining fit
     training_dictionary: (dict) configuration of training options
@@ -36,5 +37,5 @@ def plot_results(history, history_keys, training_dictionary):
     plt.yticks(fontsize=14)
     plt.legend(['train', 'validation'], loc='best')
     if training_dictionary['save_curve']:
-        fig.savefig('loss_and_accuracy.png')
+        fig.savefig(model_name+'_loss_and_accuracy.png')
     plt.show()

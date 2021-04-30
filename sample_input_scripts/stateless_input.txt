@@ -23,7 +23,7 @@ sequence_length: 5
 sequence_overlap: 2
 
 [Data]
-data_directory: data/garage_loop/*.hdf5
+data_directory: data/*.hdf5
 shuffle: True
 large_data: False
 train_to_valid: 0.8
