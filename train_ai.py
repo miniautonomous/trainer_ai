@@ -151,7 +151,7 @@ class TrainAI(object):
         # Plot the graph
         if self.training_configuration.training_dictionary['plot_network']:
             keras.utils.plot_model(keras_model, self.training_configuration.network_dictionary['model_name'] +
-                                   "model_to_train.png", show_shapes=True)
+                                   "_model_to_train.png", show_shapes=True)
 
         # Create a dataset
         training_dataset = self.create_dataset(self.training_data[0][0], self.training_data[0][1])
