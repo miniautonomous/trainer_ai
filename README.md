@@ -75,16 +75,53 @@ Great, so how do we use it? Right, to kick things off you can use any of the inp
     python3 trainer_ai.py input_script.txt
 ```
 
-The key here is the content of **input_script.txt**, so lets review two examples: one script that trains a network
-with state memory, (i.e. contains a GRU, LSTM, etc.), and one that trains a stateless model, (i.e. image in, inference
-out). Let's start with the later first since it is the most basic.
+The key here is the content of **input_script.txt**. Two examples are given in the 'sample_input_script' directory: one 
+that can be used to train a network with state memory, (i.e. contains a GRU, LSTM, etc.), and one that can train a 
+stateless model, (i.e. image in, inference out). They are both similar in nature and have the same key template 
+consisting of three distinct sections, each with their own distinct options. Below is the input template:
 
-## Stateless Model
+```angular2html
+    >[Training]:
+        > optimizer: (str) name of desired optimizer -- use any made available by Tensorflow/keras), but for standard 
+                     use cases 'rmsprop' does well
+        > loss: (str) desired loss function -- options are 'MSE', 'MAE', and 'ENTROPY'
+        > epochs: (int) number of epochs to train for
+        > batch_size: (int) size of mini-batch for each gradient evaluation
+        > plot_network: (bool) plot resulting loss/accuracy curve after training
+        > save_curve: (bool) save the plot?
+        > save_model: (bool) do you wish to save the resulting model? (default save is to Keras HDF5 file)
+        > decay_type: PLACE HOLDER --  We have not had to alter standard decay elements for training, but we have left
+                                       have left this parameter here in case future models require these specs
+        > starting_learning_rate: PLACE HOLDER
+        > decay_steps: PLACE HOLDER
 
+    >[Network]:
+        > model_name: (str) Name as it model name appears in 'Model' directory. (File and class name should match.)
+        > precision: (str) Numeric precision of master weights, options are 'half' or 'single'
+        > save_to_trt: (bool) parse the resulting model via 'TensorRT'
+        > image_width: (int) width of the input tensor into the network
+        > image_height: (int) height of the input tensor into the network
+        > sequence: (bool) does the network being trained require a sequence of images, (i.e. it has a GRU, LSTM, etc, 
+                    needs a sequence of images to train)
+        > sequence_length: (int) number of frames that need to be in a sequence to train
+        > sequence_overlap: (int) number of frames that can be shared across distinct sequences, (e.g. if you are using
+                            frames [1, 2, 3, 4] and you have an overlap of 2, then you can also uses frames [3, 4, 5, 6]
+                            for training
+        > throttle: (bool) are we training a network that will have an output for throttle?
 
+    >[Data]
+        > data_directory: (str) directory where the data that was uploaded from the car and will be used for training is
+                          stored
+        > shuffle: (bool) do you wish to shuffle the data?
+        > large_data: (bool) is the data too large, (beyond 2 GBs), to create a single 'Tensorflow' dataset. If so, 
+                      attempt to append distinct datasets into a concatenation of datasets. (See lines 77 to 85.) 
+        > train_to_valid: (float) ratio of training-to-validation data to use while training
+        > normalize: (bool) Do you wish to normalize the data from -100 to 100 for steering and 0 to 100 for throttle or
+                     use raw PWM values. (The latter, although possible, is not advisable.)
+```
 
-
-## A Sample Network Definition File
+If you wish to make changes to the input template, review *utils/process_configuration.py* to see how input scripts are
+parsed for a training session.
 
 # Simulation is the Key to Success
 
