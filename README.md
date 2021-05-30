@@ -20,9 +20,11 @@ a variety of other information that might be helpful on you journey. Enjoy!
 
 2. [Code Structure](#code-structure)
 
-3. [Simulation is the Key to Success](#simulation-is-the-key-to-success)
+3. [Usage](#usage)
 
-3. [Training End-to-End Networks](#training-end-to-end-networks)
+4. [Simulation is the Key to Success](#simulation-is-the-key-to-success)
+
+5. [Training End-to-End Networks](#training-end-to-end-networks)
 
 # Installation
 
@@ -43,7 +45,46 @@ generally compatible with our the training stack.
 
 # Code Structure
 
-The focal script is *trainer_ai.py*
+The focal script is *trainer_ai.py*, which will allow you to load from your vehicle, define a network topology for the 
+end-to-end autonomous application, save the resulting model to either a **Keras** model file or a **TensorRT** parsed 
+model directory, and finally run inference on test files to simulate how well the network will do on the chosen task. 
+All these topics are review in the following sections.
+
+Here is a brief summary of the primary files and directories' content to orient you as you study the code.
+
+```angular2html
+    trainer_ai.py: primary script that loads data from distinct files and creates *Tensorflow* a **dataset**, creates
+                   a training configuration in terms of defining a loss and metric for accuracy, compiles a model and 
+                   trains it using the **Keras** **fit** method.
+    >[custom_layers]: directory to define custom layer definitions for use in novel network models
+    >[models]: directory that contains network model definitions
+    >[sample_input_scripts]: directory that contains various examples of input scripts to pass to trainer_ai.py to 
+                             define a training run
+    >[simulation]: directory that contains the file dnn_inference.py, that allows the user to run an inference test on 
+                   test data.
+    >[utils]: directory that contains various utilities that help load data, process input scripts and plot training and
+              simulation results.
+```
+
+# Usage
+
+Great, so how do we use it? Right, to kick things off you can use any of the input scripts present in 
+**sample_input_scripts** as a template and once redefined as needed, type the following
+
+```angular2html
+    python3 trainer_ai.py input_script.txt
+```
+
+The key here is the content of **input_script.txt**, so lets review two examples: one script that trains a network
+with state memory, (i.e. contains a GRU, LSTM, etc.), and one that trains a stateless model, (i.e. image in, inference
+out). Let's start with the later first since it is the most basic.
+
+## Stateless Model
+
+
+
+
+## A Sample Network Definition File
 
 # Simulation is the Key to Success
 
