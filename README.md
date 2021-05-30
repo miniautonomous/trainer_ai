@@ -138,7 +138,7 @@ how close your model is to the manual input of the driver. An example result for
 plot has been commented out, but uncomment lines 162-163 and you will see the throttle plot.)
 
 <p align="center">
-<img src=./img/simulation_example.png.png width="75%"><p></p>
+<img src=./img/simulation_example.png width="75%"><p></p>
 <p align="center"> Figure 1: Example of a simulation plot</p>
 
 Based on our experience, normally steering RMSE's on the order of 20% or less will prove somewhat reliable, while under 
