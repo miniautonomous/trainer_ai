@@ -87,7 +87,8 @@ consisting of three distinct sections, each with their own distinct options. Bel
         > loss: (str) desired loss function -- options are 'MSE', 'MAE', and 'ENTROPY'
         > epochs: (int) number of epochs to train for
         > batch_size: (int) size of mini-batch for each gradient evaluation
-        > plot_network: (bool) plot resulting loss/accuracy curve after training
+        > plot_network: (bool) plot a graph depiction of the network being trained?
+        > plot_curve: (bool) plot resulting loss/accuracy curve after training
         > save_curve: (bool) save the plot?
         > save_model: (bool) do you wish to save the resulting model? (default save is to Keras HDF5 file)
         > decay_type: PLACE HOLDER --  We have not had to alter standard decay elements for training, but we have left
@@ -124,5 +125,24 @@ If you wish to make changes to the input template, review *utils/process_configu
 parsed for a training session.
 
 # Simulation is the Key to Success
+
+It would be a very painful iteration process to train a model and then deploy it back to the vehicle without any sense 
+of how the model should theoretically do in practice. Having a poor validation curve gives you some sense, but for 
+various applications, it is much clearer to have a series of test data files that are extracted from the training data 
+which are used to run as input for pure inference quality tests. 
+
+This functionality is provided in 'simulation/dnn_inference.py'. Please review the script now. It is quite 
+straightforward. Once you specify an input model, either saved as **Keras** model file or a *TensorRT* model directory, 
+you then specify the location of the test files, (line 71), and then you can run an inference test on the data to see 
+how close your model is to the manual input of the driver. An example result for steering is given below. (The throttle 
+plot has been commented out, but uncomment lines 162-163 and you will see the throttle plot.)
+
+<p align="center">
+<img src=./img/simulation_example.png.png width="75%"><p></p>
+<p align="center"> Figure 1: Example of a simulation plot</p>
+
+Based on our experience, normally steering RMSE's on the order of 20% or less will prove somewhat reliable, while under 
+10-12% will be very accurate. We scale the RMSE by the total normalized scale of steering available. Throttle is more 
+difficult to pinpoint and is much more correlated to the autonomous objective in question.
 
 # Training End-to-End Networks
