@@ -28,7 +28,9 @@ a variety of other information that might be helpful on you journey. Enjoy!
 
     i. [Speed is Also Key](#speed-is-also-key)
 
-    ii. []
+    ii. [Focus on Data Acquisition](#focus-on-data-acquisition)
+
+    iii. [Dream the Dream](#dream-the-dream)
 
 # Installation
 
@@ -201,7 +203,7 @@ noon, don't be surprised to face abject failure. If you are in an enclosed area,
 one direction. This may seem obvious, but consider these factors as you train your model. Try to be patient at this 
 stage of the cycle of training, since good quality data is really fundamental to your network's success.
 
-## Dream the dream
+## Dream the Dream
 
 This is not meant to be a commercial endorsement, but the Jetson Nano is really a very remarkable little piece of 
 equipment. Currently, it consists of 128 GPU cores of the Maxwell variety, which is quite a punch for such a small 
