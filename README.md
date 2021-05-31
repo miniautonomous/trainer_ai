@@ -26,6 +26,10 @@ a variety of other information that might be helpful on you journey. Enjoy!
 
 5. [Training End-to-End Networks](#training-end-to-end-networks)
 
+    i. [Speed is Also Key](#speed-is-also-key)
+
+    ii. []
+
 # Installation
 
 As opposed to *engine_ai*, where one is constrained by certain limitations of the Jetson Nano platform, getting 
@@ -92,7 +96,7 @@ consisting of three distinct sections, each with their own distinct options. Bel
         > save_curve: (bool) save the plot?
         > save_model: (bool) do you wish to save the resulting model? (default save is to Keras HDF5 file)
         > decay_type: PLACE HOLDER --  We have not had to alter standard decay elements for training, but we have left
-                                       have left this parameter here in case future models require these specs
+                                       this parameter here in case future models require these specs
         > starting_learning_rate: PLACE HOLDER
         > decay_steps: PLACE HOLDER
 
@@ -107,7 +111,7 @@ consisting of three distinct sections, each with their own distinct options. Bel
         > sequence_length: (int) number of frames that need to be in a sequence to train
         > sequence_overlap: (int) number of frames that can be shared across distinct sequences, (e.g. if you are using
                             frames [1, 2, 3, 4] and you have an overlap of 2, then you can also uses frames [3, 4, 5, 6]
-                            for training
+                            for training)
         > throttle: (bool) are we training a network that will have an output for throttle?
 
     >[Data]
@@ -115,7 +119,8 @@ consisting of three distinct sections, each with their own distinct options. Bel
                           stored
         > shuffle: (bool) do you wish to shuffle the data?
         > large_data: (bool) is the data too large, (beyond 2 GBs), to create a single 'Tensorflow' dataset. If so, 
-                      attempt to append distinct datasets into a concatenation of datasets. (See lines 77 to 85.) 
+                      attempt to append distinct datasets into a concatenation of datasets. (See lines 77 to 85 of 
+                      trainer_ai.py.) 
         > train_to_valid: (float) ratio of training-to-validation data to use while training
         > normalize: (bool) Do you wish to normalize the data from -100 to 100 for steering and 0 to 100 for throttle or
                      use raw PWM values. (The latter, although possible, is not advisable.)
@@ -146,3 +151,64 @@ Based on our experience, normally steering RMSE's on the order of 20% or less wi
 difficult to pinpoint and is much more correlated to the autonomous objective in question.
 
 # Training End-to-End Networks
+
+There are a number of elements to consider when training networks for various end-to-end applications, and hopefully 
+*trainer_ai* in conjunction with *engine_ai* will give you valuable insight into things to consider. What we wanted to
+share here are some elements that are pretty key to success but that might not be directly evident at first.
+
+## Speed is Also Key:
+
+This may seem obvious, but the speed is key, and what we mean here is the latency of inference, which we measure here 
+in the frames-per-second (FPS). When you use *engine_ai*, (https://github.com/miniautonomous/engine_ai), three FPS 
+readings are presented in the UI: the primary drive loop, the inference rate, and the camera loop. This last FPS is 
+generally an FYI that might help you debug if there seems to be a camera lag. The inference rate is how quickly your 
+network can process frames, which in turn throttles your drive loop, which measure how quickly you go from camera image 
+grab to steering/throttle output to the microcontroller. 
+
+Generally real time is consider 30 FPS, and if you can achieve this when you are in an inference state, (i.e. 
+autonomous), you are golden; that is, as long as your network actually works. The longer it takes the network to process
+an image, the slower your inference rate and thus the slower your end-to-end drive loop. We have found from experience 
+that regardless of the task at hand, 12 FPS is pretty much the bottom speed at which the vehicle can operate 
+autonomously. The issue is that regardless how mundane the task, below 12 FBS, by the time the car has processed an 
+image correctly, it is too far gone along a given trajectory to correctly process the current state of the vehicle's 
+surroundings. (Thus beware of any demos when all you see is a vehicle go straight! ;D)
+
+Why is this important to point out? Well, for some tasks, it is critical to add some memory to the model so that the 
+network can 'anticipate' the driving condition it is in and help it maneuver. Memory is usually needed when there are no
+key image markers, (things like lane tape on the floor or little cones, etc.). When you add memory, almost invariably 
+your compute latency goes up. LSTM's and GRU's, (eventhough the latter are slightly less so), are computationally 
+expensive. So when you train a model and the simulation you run on test files seems to show you that you have an 
+accurate model, bear in mind that there is still a second metric that you need to determine: how fast will it run on the
+car? Once you train the model, (and please always parse it to *TensorRT*), run it on Nano so that you see what are the 
+resulting FPS of the drive and inference loops. If you are at or slightly above 15 FPS, normally you are at the edge of
+reliable performance. By the time you hit 20 to 22, you are usually good to go. (The demo in which one of us is walking
+the vehicle around the kitchen island ran at 21 FPS end-to-end.)
+
+You may be tempted to ditch the state memory and just run end-to-end inference. The garage loop demo in our portal ran 
+at a whopping 27-28 FPS. This allowed the car to go really, (really), fast, but the image markers of cones are a huge 
+assistance and the only response required is to steer inward to avoid the obstacle. The complexity of the task will 
+require judgement as to if you can go with or without memory.
+
+## Focus on Data Acquisition
+
+An early gating factor in distinguishing between remarkable success and dismal failure is the quality of training data. 
+You may think that driving the vehicle around is pretty straightforward, and it is, but one needs to be mindful of a 
+few key aspects. First, consistency; not so much in terms of driving behaviour, since some diversity is helpful to create
+robustness, but in terms of lighting. Training a network to perform a task outside is very tricky since the incidental 
+lighting varies so much during the day. If you train a great model at 10 a.m., and then run an inference drive test at 
+noon, don't be surprised to face abject failure. If you are in an enclosed area, and you train with a closed loop and do
+5 clockwise loops but only 2 counter-clockwise loops, don't be surprised if your network can only negotiate the track in 
+one direction. This may seem obvious, but consider these factors as you train your model. Try to be patient at this 
+stage of the cycle of training, since good quality data is really fundamental to your network's success.
+
+## Dream the dream
+
+This is not meant to be a commercial endorsement, but the Jetson Nano is really a very remarkable little piece of 
+equipment. Currently, it consists of 128 GPU cores of the Maxwell variety, which is quite a punch for such a small 
+footprint. The painful part is getting things compiled for its hardware stack, but once we got things set, we've been 
+able to run things on the little platform that compare quite favorable to work we did 3 or 4 years ago on discrete GPU 
+cards. Bottom line, if you can think of an autonomous task and you have doubts as to if the platform can handle it, try 
+it out! You never know if a little ingenuity can help you get over the finish line and complete the task at hand!
+
+
+
