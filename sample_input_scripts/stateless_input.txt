@@ -1,15 +1,15 @@
 [Training]
 optimizer: rmsprop
 loss: MSE
-decay_type: static
-starting_learning_rate: 0.0001
-decay_steps: 10000
-epochs: 100
+epochs: 5
 batch_size: 16
 plot_network: True
 plot_curve: True
 save_curve: True
 save_model: True
+decay_type: static
+starting_learning_rate: 0.0001
+decay_steps: 10000
 
 [Network]
 model_name: StatelessRegression
@@ -18,9 +18,9 @@ save_to_trt: True
 image_width: 80
 image_height: 60
 sequence: False
-throttle: True
 sequence_length: 5
 sequence_overlap: 2
+throttle: True
 
 [Data]
 data_directory: data/*.hdf5
