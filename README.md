@@ -141,9 +141,8 @@ quality tests.
 
 This functionality is provided in *simulation/dnn_inference.py*. Please review the script now since it is quite 
 straightforward. Once you specify an input model, either saved as **Keras** model file or a *TensorRT* model directory, 
-you then specify the location of the test files, (line 71), and then you can run an inference test on data to see 
-how close your model is to the manual input of the driver. An example result for steering is given below. (The throttle 
-plot has been commented out, but uncomment lines 162-163 and you will see the throttle profile.)
+you then specify the location of the test files and then run an inference test on data to see 
+how close your model is to the manual input of the driver. An example result is shown below. 
 
 <p align="center">
 <img src=./img/simulation_example.png width="75%"><p></p>
@@ -191,7 +190,7 @@ You may be tempted to ditch state memory and just run end-to-end inference. The 
 at a whopping 27-29 FPS. This allowed the car to go really, really fast, but the image markers of cones are a huge 
 aid and the only response required is to steer inward to avoid the obstacle. The complexity of the task will require 
 judgement as to if you can go with or without memory, and we have found that most non-marker assisted task benefit 
-significantly from have a memory module.
+significantly from having a memory module.
 
 ## Focus on Data Acquisition
 
