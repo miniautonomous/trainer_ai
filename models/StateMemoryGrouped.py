@@ -5,7 +5,7 @@ from .base_model import Model
 from custom_layers import derived_layers
 
 
-class GarageLoopModel(Model):
+class StateMemoryGrouped(Model):
     def __init__(self, network_dictionary: dict):
         """
             The basic regression model used as a test bed for model construction.
@@ -14,7 +14,7 @@ class GarageLoopModel(Model):
         ----------
         network_dictionary: (dict) network configuration dictionary
         """
-        super(GarageLoopModel, self).__init__(network_dictionary=network_dictionary)
+        super(StateMemoryGrouped, self).__init__(network_dictionary=network_dictionary)
 
         # Set the mode of the model: classifier or regression
         self.mode = 'regression'
