@@ -4,15 +4,22 @@ Welcome to the code base for *trainer_ai*!
 
 This is the software stack that is the training counterpart of *engine_ai*, 
 (https://github.com/miniautonomous/engine_ai), and allows you to prepare network models for inference for the 
-**MiniAutonomous** vehicle. In this README, we are going to review its basic installation process, the overall code 
-structure, and a few key facets to consider when training network models for end-to-end driving applications. 
-
-Please be aware that additional supporting content is available in our main portal page:
+**MiniAutonomous** vehicle. Please be aware that additional supporting content for using this code base is available in 
+our main portal page:
 
 https://miniautonomous.github.io/portal/
 
 This is where you will find more resources regarding *engine_ai*, (the on-vehicle stack), vehicle assembly videos, and
-a variety of other information that might be helpful on you journey. Enjoy!
+a variety of other information that might be helpful on you journey. If you are not familiar with the miniAutonomous 
+framework, we suggest that is where you should begin, but a summary slide is provided here to give you an overall view
+of the ecosystem.
+
+<p align="center">
+<img src=./img/intro_slide.png width="75%"><p></p>
+<p align="center"> Figure 1: miniAutonomous in a slide</p>
+
+In this README, we are going to review its basic installation process, the overall code 
+structure, and a few key facets to consider when training network models for end-to-end driving applications. 
 
 # Table of Contents
 
@@ -146,7 +153,7 @@ how close your model is to the manual input of the driver. An example result is 
 
 <p align="center">
 <img src=./img/simulation_example.png width="75%"><p></p>
-<p align="center"> Figure 1: Example of a simulation plot</p>
+<p align="center"> Figure 2: Example of a simulation plot</p>
 
 Based on our experience, steering RMSE's on the order of 20% or less will prove somewhat reliable, while under 
 10-12% will be very accurate. (Note that here We scale the RMSE by the total normalized scale of steering available.) 
