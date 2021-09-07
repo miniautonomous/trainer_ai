@@ -4,7 +4,7 @@ Welcome to the code base for *trainer_ai*!
 
 This is the software stack that is the training counterpart of *engine_ai*, 
 (https://github.com/miniautonomous/engine_ai), and allows you to prepare network models for inference for the 
-**MiniAutonomous** vehicle. Please be aware that additional supporting content for using this code base is available in 
+miniAutonomous vehicle. Please be aware that additional supporting content for using this code base is available in 
 our main portal page:
 
 https://miniautonomous.github.io/portal/
